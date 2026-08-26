@@ -279,9 +279,80 @@ func (m model) renderRecentHeatmap(weekCount int) string {
 		weeks = weeks[len(weeks)-weekCount:]
 	}
 
-	return renderHeatmap(
+	return renderCompactHeatmap(
 		fmt.Sprintf("Recent contributions · %d weeks", weekCount),
 		weeks,
+	)
+}
+
+func renderCompactHeatmap(
+	title string,
+	weeks []ContributionWeek,
+) string {
+	titleStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("#C0CAF5"))
+
+	weekLabelStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#565F89"))
+
+	rows := make([]string, 7)
+
+	for _, week := range weeks {
+		for dayIndex := 0; dayIndex < 7; dayIndex++ {
+			if dayIndex >= len(week.ContributionDays) {
+				rows[dayIndex] += "  "
+				continue
+			}
+
+			day := week.ContributionDays[dayIndex]
+
+			if day.Date == "" {
+				rows[dayIndex] += "  "
+				continue
+			}
+
+			rows[dayIndex] += contributionCell(
+				day.ContributionCount,
+			)
+		}
+	}
+
+	weekdayLabels := []string{
+		"   ",
+		"Mon",
+		"   ",
+		"Wed",
+		"   ",
+		"Fri",
+		"   ",
+	}
+
+	var heatmapRows []string
+
+	for i, row := range rows {
+		heatmapRows = append(
+			heatmapRows,
+			fmt.Sprintf(
+				"%s  %s",
+				weekLabelStyle.Render(weekdayLabels[i]),
+				row,
+			),
+		)
+	}
+
+	matrix := lipgloss.JoinVertical(
+		lipgloss.Left,
+		heatmapRows...,
+	)
+
+	return lipgloss.JoinVertical(
+		lipgloss.Left,
+		titleStyle.Render(title),
+		"",
+		matrix,
+		"",
+		"     "+renderLegend(),
 	)
 }
 
