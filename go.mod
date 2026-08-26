@@ -3,8 +3,11 @@ module github.com/NoaLand/dev-dashboard
 go 1.27.0
 
 require (
-	charm.land/bubbletea/v2 v2.0.9 // indirect
-	charm.land/lipgloss/v2 v2.0.6 // indirect
+	charm.land/bubbletea/v2 v2.0.9
+	charm.land/lipgloss/v2 v2.0.6
+)
+
+require (
 	github.com/charmbracelet/colorprofile v0.4.3 // indirect
 	github.com/charmbracelet/ultraviolet v0.0.0-20260811164956-006e29f97886 // indirect
 	github.com/charmbracelet/x/ansi v0.11.8 // indirect

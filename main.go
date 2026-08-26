@@ -1,13 +1,17 @@
 package main
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
+	"image"
+	_ "image/jpeg"
+	"image/png"
 	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"strings"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
@@ -49,15 +53,11 @@ type githubResponse struct {
 }
 
 type profileLoadedMsg struct {
-	profile    Profile
-	avatarPath string
+	profile Profile
+	avatar  image.Image
 }
 
-type avatarRenderedMsg struct {
-	content string
-	width   int
-	height  int
-}
+type refreshMsg struct{}
 
 type errMsg struct {
 	err error
@@ -67,25 +67,15 @@ type model struct {
 	width  int
 	height int
 
-	profile    *Profile
-	avatarPath string
-	avatar     string
-
-	avatarWidth  int
-	avatarHeight int
+	profile *Profile
+	avatar  image.Image
 
 	lastUpdated time.Time
 
 	err error
 }
 
-type refreshMsg struct{}
-
-func refreshTick() tea.Cmd {
-	return tea.Tick(5*time.Minute, func(time.Time) tea.Msg {
-		return refreshMsg{}
-	})
-}
+const kittyChunkSize = 4096
 
 func initialModel() model {
 	return model{}
@@ -95,6 +85,15 @@ func (m model) Init() tea.Cmd {
 	return tea.Batch(
 		fetchProfileCmd(),
 		refreshTick(),
+	)
+}
+
+func refreshTick() tea.Cmd {
+	return tea.Tick(
+		5*time.Minute,
+		func(time.Time) tea.Msg {
+			return refreshMsg{}
+		},
 	)
 }
 
@@ -119,42 +118,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 
-		newAvatarWidth := avatarWidth(m.width)
-		newAvatarHeight := avatarHeight(m.height)
-
-		if m.avatarPath != "" &&
-			(newAvatarWidth != m.avatarWidth ||
-				newAvatarHeight != m.avatarHeight) {
-
-			m.avatarWidth = newAvatarWidth
-			m.avatarHeight = newAvatarHeight
-
-			return m, renderAvatarCmd(
-				m.avatarPath,
-				m.avatarWidth,
-				m.avatarHeight,
-			)
+		if m.avatar != nil {
+			return m, m.renderAvatarCmd()
 		}
 
 	case profileLoadedMsg:
 		m.profile = &msg.profile
-		m.avatarPath = msg.avatarPath
+		m.avatar = msg.avatar
 		m.lastUpdated = time.Now()
 
-		m.avatarWidth = avatarWidth(m.width)
-		m.avatarHeight = avatarHeight(m.height)
-
-		return m, renderAvatarCmd(
-			m.avatarPath,
-			m.avatarWidth,
-			m.avatarHeight,
-		)
-
-	case avatarRenderedMsg:
-		if msg.width == m.avatarWidth &&
-			msg.height == m.avatarHeight {
-			m.avatar = msg.content
-		}
+		return m, m.renderAvatarCmd()
 
 	case errMsg:
 		m.err = msg.err
@@ -166,12 +139,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) View() tea.View {
 	if m.err != nil {
 		return tea.NewView(
-			fmt.Sprintf("Error: %v\n\nPress q to quit.", m.err),
+			fmt.Sprintf(
+				"Error: %v\n\nPress q to quit.",
+				m.err,
+			),
 		)
 	}
 
 	if m.profile == nil {
-		return tea.NewView("Loading GitHub profile...")
+		return tea.NewView(
+			"Loading GitHub profile...",
+		)
 	}
 
 	var content string
@@ -184,7 +162,36 @@ func (m model) View() tea.View {
 
 	v := tea.NewView(content)
 	v.AltScreen = true
+
 	return v
+}
+
+func (m model) renderAvatarCmd() tea.Cmd {
+	if m.avatar == nil ||
+		!isWide(m.width, m.height) {
+		return nil
+	}
+
+	var row, col int
+
+	if isCompactWide(m.width, m.height) {
+		row, col = m.compactAvatarPosition()
+	} else {
+		row, col = m.fullAvatarPosition()
+	}
+
+	avatar := renderKittyImage(
+		m.avatar,
+		avatarWidth(m.width),
+		avatarHeight(m.height),
+	)
+
+	raw :=
+		moveCursor(row, col) +
+			avatar +
+			"\x1b[H"
+
+	return tea.Raw(raw)
 }
 
 func isWide(width, height int) bool {
@@ -229,7 +236,6 @@ func (m model) renderCompactWide() string {
 		"Updated " + m.lastUpdated.Format("15:04"),
 	)
 
-	// 小 pane 给 profile 多一点空间。
 	leftWidth := m.width * 2 / 5
 	rightWidth := m.width - leftWidth
 
@@ -237,15 +243,28 @@ func (m model) renderCompactWide() string {
 	thisWeek := m.thisWeekContributions()
 	thisYear := m.profile.TotalContributions
 
-	// 小尺寸下缩短 label，节省横向空间。
 	stats := lipgloss.JoinVertical(
 		lipgloss.Left,
-		statLine("Today", today, statLabelStyle, statValueStyle),
-		statLine("Week", thisWeek, statLabelStyle, statValueStyle),
-		statLine("Year", thisYear, statLabelStyle, statValueStyle),
+		statLine(
+			"Today",
+			today,
+			statLabelStyle,
+			statValueStyle,
+		),
+		statLine(
+			"Week",
+			thisWeek,
+			statLabelStyle,
+			statValueStyle,
+		),
+		statLine(
+			"Year",
+			thisYear,
+			statLabelStyle,
+			statValueStyle,
+		),
 	)
 
-	// compact 模式刻意减少空行和 separator。
 	meta := lipgloss.JoinHorizontal(
 		lipgloss.Center,
 		handleStyle.Render("@"+m.profile.Login),
@@ -253,9 +272,15 @@ func (m model) renderCompactWide() string {
 		updated,
 	)
 
+	avatarCols := avatarWidth(m.width)
+	avatarRows := avatarHeight(m.height)
+
 	profile := lipgloss.JoinVertical(
 		lipgloss.Center,
-		m.avatar,
+		avatarPlaceholder(
+			avatarCols,
+			avatarRows,
+		),
 		nameStyle.Render(m.profile.Name),
 		meta,
 		"",
@@ -317,14 +342,35 @@ func (m model) renderFullWide() string {
 
 	stats := lipgloss.JoinVertical(
 		lipgloss.Left,
-		statLine("Today", today, statLabelStyle, statValueStyle),
-		statLine("This week", thisWeek, statLabelStyle, statValueStyle),
-		statLine("This year", thisYear, statLabelStyle, statValueStyle),
+		statLine(
+			"Today",
+			today,
+			statLabelStyle,
+			statValueStyle,
+		),
+		statLine(
+			"This week",
+			thisWeek,
+			statLabelStyle,
+			statValueStyle,
+		),
+		statLine(
+			"This year",
+			thisYear,
+			statLabelStyle,
+			statValueStyle,
+		),
 	)
+
+	avatarCols := avatarWidth(m.width)
+	avatarRows := avatarHeight(m.height)
 
 	profileHeader := lipgloss.JoinVertical(
 		lipgloss.Center,
-		m.avatar,
+		avatarPlaceholder(
+			avatarCols,
+			avatarRows,
+		),
 		"",
 		nameStyle.Render(m.profile.Name),
 		handleStyle.Render("@"+m.profile.Login),
@@ -422,7 +468,9 @@ func (m model) thisWeekContributions() int {
 	return total
 }
 
-func (m model) renderRecentHeatmap(weekCount int) string {
+func (m model) renderRecentHeatmap(
+	weekCount int,
+) string {
 	if len(m.profile.Weeks) == 0 {
 		return "No contribution data"
 	}
@@ -434,7 +482,10 @@ func (m model) renderRecentHeatmap(weekCount int) string {
 	}
 
 	return renderCompactHeatmap(
-		fmt.Sprintf("Recent contributions · %d weeks", weekCount),
+		fmt.Sprintf(
+			"Recent contributions · %d weeks",
+			weekCount,
+		),
 		weeks,
 	)
 }
@@ -489,7 +540,9 @@ func renderCompactHeatmap(
 			heatmapRows,
 			fmt.Sprintf(
 				"%s  %s",
-				weekLabelStyle.Render(weekdayLabels[i]),
+				weekLabelStyle.Render(
+					weekdayLabels[i],
+				),
 				row,
 			),
 		)
@@ -536,7 +589,7 @@ func renderYearHeatmap(
 
 	rows := make([]string, 7)
 
-	for weekIndex, week := range weeks {
+	for _, week := range weeks {
 		for dayIndex := 0; dayIndex < 7; dayIndex++ {
 			if dayIndex >= len(week.ContributionDays) {
 				rows[dayIndex] += "  "
@@ -554,8 +607,6 @@ func renderYearHeatmap(
 				day.ContributionCount,
 			)
 		}
-
-		_ = weekIndex
 	}
 
 	weekdayLabels := []string{
@@ -575,7 +626,9 @@ func renderYearHeatmap(
 			heatmapRows,
 			fmt.Sprintf(
 				"%s  %s",
-				weekLabelStyle.Render(weekdayLabels[i]),
+				weekLabelStyle.Render(
+					weekdayLabels[i],
+				),
 				row,
 			),
 		)
@@ -586,8 +639,6 @@ func renderYearHeatmap(
 		heatmapRows...,
 	)
 
-	legend := renderLegend()
-
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		titleStyle.Render(title),
@@ -595,11 +646,13 @@ func renderYearHeatmap(
 		"     "+monthLabels,
 		matrix,
 		"",
-		"     "+legend,
+		"     "+renderLegend(),
 	)
 }
 
-func buildMonthLabels(weeks []ContributionWeek) string {
+func buildMonthLabels(
+	weeks []ContributionWeek,
+) string {
 	if len(weeks) == 0 {
 		return ""
 	}
@@ -619,7 +672,10 @@ func buildMonthLabels(weeks []ContributionWeek) string {
 				continue
 			}
 
-			t, err := time.Parse("2006-01-02", day.Date)
+			t, err := time.Parse(
+				"2006-01-02",
+				day.Date,
+			)
 			if err != nil {
 				continue
 			}
@@ -679,7 +735,9 @@ func renderLegend() string {
 	)
 }
 
-func contributionLegendCell(color string) string {
+func contributionLegendCell(
+	color string,
+) string {
 	return lipgloss.NewStyle().
 		Foreground(lipgloss.Color(color)).
 		Render("■ ")
@@ -725,46 +783,16 @@ func fetchProfileCmd() tea.Cmd {
 			return errMsg{err}
 		}
 
-		path, err := downloadAvatar(profile.AvatarURL)
+		avatar, err := downloadAvatar(
+			profile.AvatarURL,
+		)
 		if err != nil {
 			return errMsg{err}
 		}
 
 		return profileLoadedMsg{
-			profile:    profile,
-			avatarPath: path,
-		}
-	}
-}
-
-func renderAvatarCmd(
-	path string,
-	width,
-	height int,
-) tea.Cmd {
-	return func() tea.Msg {
-		cmd := exec.Command(
-			"chafa",
-			"--format=symbols",
-			"--size",
-			fmt.Sprintf("%dx%d", width, height),
-			path,
-		)
-
-		output, err := cmd.Output()
-		if err != nil {
-			return errMsg{
-				err: fmt.Errorf(
-					"render avatar: %w",
-					err,
-				),
-			}
-		}
-
-		return avatarRenderedMsg{
-			content: string(output),
-			width:   width,
-			height:  height,
+			profile: profile,
+			avatar:  avatar,
 		}
 	}
 }
@@ -822,6 +850,7 @@ query {
 	}
 
 	viewer := response.Data.Viewer
+
 	calendar :=
 		viewer.
 			ContributionsCollection.
@@ -838,52 +867,27 @@ query {
 
 func downloadAvatar(
 	url string,
-) (string, error) {
-	cacheDir := filepath.Join(
-		os.TempDir(),
-		"dev-dashboard",
-	)
-
-	if err := os.MkdirAll(
-		cacheDir,
-		0o755,
-	); err != nil {
-		return "", err
-	}
-
-	path := filepath.Join(
-		cacheDir,
-		"avatar.png",
-	)
-
+) (image.Image, error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return "",
+		return nil,
 			fmt.Errorf(
 				"avatar download returned %s",
 				resp.Status,
 			)
 	}
 
-	file, err := os.Create(path)
+	img, _, err := image.Decode(resp.Body)
 	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-
-	if _, err := io.Copy(
-		file,
-		resp.Body,
-	); err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return path, nil
+	return img, nil
 }
 
 func avatarWidth(width int) int {
@@ -900,6 +904,138 @@ func avatarHeight(height int) int {
 	}
 
 	return 7
+}
+
+func avatarPlaceholder(
+	width int,
+	height int,
+) string {
+	line := strings.Repeat(" ", width)
+
+	lines := make([]string, height)
+
+	for i := range lines {
+		lines[i] = line
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+func renderKittyImage(
+	img image.Image,
+	cols int,
+	rows int,
+) string {
+	if img == nil {
+		return ""
+	}
+
+	var pngBuf bytes.Buffer
+
+	if err := png.Encode(&pngBuf, img); err != nil {
+		return ""
+	}
+
+	data := base64.StdEncoding.EncodeToString(
+		pngBuf.Bytes(),
+	)
+
+	var out strings.Builder
+
+	first := true
+
+	for len(data) > 0 {
+		n := kittyChunkSize
+		if len(data) < n {
+			n = len(data)
+		}
+
+		chunk := data[:n]
+		data = data[n:]
+
+		more := len(data) > 0
+
+		m := 0
+		if more {
+			m = 1
+		}
+
+		if first {
+			fmt.Fprintf(
+				&out,
+				"\x1b_Ga=T,f=100,c=%d,r=%d,q=2,m=%d;%s\x1b\\",
+				cols,
+				rows,
+				m,
+				chunk,
+			)
+
+			first = false
+		} else {
+			fmt.Fprintf(
+				&out,
+				"\x1b_Gm=%d;%s\x1b\\",
+				m,
+				chunk,
+			)
+		}
+	}
+
+	return out.String()
+}
+
+func moveCursor(
+	row int,
+	col int,
+) string {
+	return fmt.Sprintf(
+		"\x1b[%d;%dH",
+		row,
+		col,
+	)
+}
+
+func (m model) compactAvatarPosition() (int, int) {
+	leftWidth := m.width * 2 / 5
+
+	avatarCols := avatarWidth(m.width)
+	avatarRows := avatarHeight(m.height)
+
+	profileHeight :=
+		avatarRows +
+			1 + // name
+			1 + // meta
+			1 + // blank
+			3 // stats
+
+	row := (m.height-profileHeight)/2 + 1
+	col := (leftWidth-avatarCols)/2 + 1
+
+	return row, col
+}
+
+func (m model) fullAvatarPosition() (int, int) {
+	leftWidth := m.width / 3
+
+	avatarCols := avatarWidth(m.width)
+	avatarRows := avatarHeight(m.height)
+
+	profileHeight :=
+		avatarRows +
+			1 + // blank after avatar
+			1 + // name
+			1 + // handle
+			1 + // blank
+			1 + // separator
+			1 + // blank
+			3 + // stats
+			1 + // blank
+			1 // updated
+
+	row := (m.height-profileHeight)/2 + 1
+	col := (leftWidth-avatarCols)/2 + 1
+
+	return row, col
 }
 
 func main() {
