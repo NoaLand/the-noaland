@@ -685,49 +685,6 @@ func contributionLegendCell(color string) string {
 		Render("■ ")
 }
 
-func renderHeatmap(
-	title string,
-	weeks []ContributionWeek,
-) string {
-	titleStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(lipgloss.Color("#C0CAF5"))
-
-	rows := make([]string, 7)
-
-	for _, week := range weeks {
-		for dayIndex := 0; dayIndex < 7; dayIndex++ {
-			if dayIndex >= len(week.ContributionDays) {
-				rows[dayIndex] += "  "
-				continue
-			}
-
-			day := week.ContributionDays[dayIndex]
-
-			if day.Date == "" {
-				rows[dayIndex] += "  "
-				continue
-			}
-
-			rows[dayIndex] += contributionCell(
-				day.ContributionCount,
-			)
-		}
-	}
-
-	matrix := lipgloss.JoinVertical(
-		lipgloss.Left,
-		rows...,
-	)
-
-	return lipgloss.JoinVertical(
-		lipgloss.Left,
-		titleStyle.Render(title),
-		"",
-		matrix,
-	)
-}
-
 func contributionCell(count int) string {
 	style := lipgloss.NewStyle()
 
