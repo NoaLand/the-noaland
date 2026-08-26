@@ -18,6 +18,8 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
+type redrawAvatarMsg struct{}
+
 type ContributionDay struct {
 	Date              string `json:"date"`
 	ContributionCount int    `json:"contributionCount"`
@@ -127,6 +129,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.avatar = msg.avatar
 		m.lastUpdated = time.Now()
 
+		return m, redrawAvatarLater()
+
+	case redrawAvatarMsg:
 		return m, m.renderAvatarCmd()
 
 	case errMsg:
@@ -919,6 +924,15 @@ func avatarPlaceholder(
 	}
 
 	return strings.Join(lines, "\n")
+}
+
+func redrawAvatarLater() tea.Cmd {
+	return tea.Tick(
+		50*time.Millisecond,
+		func(time.Time) tea.Msg {
+			return redrawAvatarMsg{}
+		},
+	)
 }
 
 func renderKittyImage(
