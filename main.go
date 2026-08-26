@@ -69,7 +69,17 @@ type model struct {
 	avatarPath string
 	avatar     string
 
+	lastUpdated time.Time
+
 	err error
+}
+
+type refreshMsg struct{}
+
+func refreshTick() tea.Cmd {
+	return tea.Tick(5*time.Minute, func(time.Time) tea.Msg {
+		return refreshMsg{}
+	})
 }
 
 func initialModel() model {
@@ -77,7 +87,10 @@ func initialModel() model {
 }
 
 func (m model) Init() tea.Cmd {
-	return fetchProfileCmd()
+	return tea.Batch(
+		fetchProfileCmd(),
+		refreshTick(),
+	)
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -86,7 +99,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
 			return m, tea.Quit
+
+		case "r":
+			return m, fetchProfileCmd()
 		}
+
+	case refreshMsg:
+		return m, tea.Batch(
+			fetchProfileCmd(),
+			refreshTick(),
+		)
 
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -103,6 +125,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case profileLoadedMsg:
 		m.profile = &msg.profile
 		m.avatarPath = msg.avatarPath
+		m.lastUpdated = time.Now()
 
 		return m, renderAvatarCmd(
 			m.avatarPath,
@@ -179,6 +202,13 @@ func (m model) renderCompactWide() string {
 		Bold(true).
 		Foreground(lipgloss.Color("#C0CAF5"))
 
+	updatedStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#3B4261"))
+
+	updated := updatedStyle.Render(
+		"Updated " + m.lastUpdated.Format("15:04"),
+	)
+
 	// 小 pane 给 profile 多一点空间。
 	leftWidth := m.width * 2 / 5
 	rightWidth := m.width - leftWidth
@@ -196,11 +226,18 @@ func (m model) renderCompactWide() string {
 	)
 
 	// compact 模式刻意减少空行和 separator。
+	meta := lipgloss.JoinHorizontal(
+		lipgloss.Center,
+		handleStyle.Render("@"+m.profile.Login),
+		updatedStyle.Render(" · "),
+		updated,
+	)
+
 	profile := lipgloss.JoinVertical(
 		lipgloss.Center,
 		m.avatar,
 		nameStyle.Render(m.profile.Name),
-		handleStyle.Render("@"+m.profile.Login),
+		meta,
 		"",
 		stats,
 	)
@@ -244,12 +281,19 @@ func (m model) renderFullWide() string {
 	separatorStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#292E42"))
 
+	updatedStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#3B4261"))
+
 	leftWidth := m.width / 3
 	rightWidth := m.width - leftWidth
 
 	today := m.todayContributions()
 	thisWeek := m.thisWeekContributions()
 	thisYear := m.profile.TotalContributions
+
+	updated := updatedStyle.Render(
+		"Updated " + m.lastUpdated.Format("15:04"),
+	)
 
 	stats := lipgloss.JoinVertical(
 		lipgloss.Left,
@@ -273,6 +317,8 @@ func (m model) renderFullWide() string {
 		separatorStyle.Render("──────────────"),
 		"",
 		stats,
+		"",
+		updated,
 	)
 
 	var right string
