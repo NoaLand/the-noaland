@@ -810,6 +810,7 @@ query {
     name
     avatarUrl
     contributionsCollection {
+	  totalCommitContributions
       contributionCalendar {
         totalContributions
         weeks {
