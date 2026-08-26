@@ -152,7 +152,81 @@ func isVeryWide(width int) bool {
 	return width >= 150
 }
 
+func isCompactWide(width, height int) bool {
+	return width >= 90 && height < 24
+}
+
 func (m model) renderWide() string {
+	if isCompactWide(m.width, m.height) {
+		return m.renderCompactWide()
+	}
+
+	return m.renderFullWide()
+}
+
+func (m model) renderCompactWide() string {
+	nameStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("#7DCFFF"))
+
+	handleStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#A9B1D6"))
+
+	statLabelStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#565F89"))
+
+	statValueStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("#C0CAF5"))
+
+	// 小 pane 给 profile 多一点空间。
+	leftWidth := m.width * 2 / 5
+	rightWidth := m.width - leftWidth
+
+	today := m.todayContributions()
+	thisWeek := m.thisWeekContributions()
+	thisYear := m.profile.TotalContributions
+
+	// 小尺寸下缩短 label，节省横向空间。
+	stats := lipgloss.JoinVertical(
+		lipgloss.Left,
+		statLine("Today", today, statLabelStyle, statValueStyle),
+		statLine("Week", thisWeek, statLabelStyle, statValueStyle),
+		statLine("Year", thisYear, statLabelStyle, statValueStyle),
+	)
+
+	// compact 模式刻意减少空行和 separator。
+	profile := lipgloss.JoinVertical(
+		lipgloss.Center,
+		m.avatar,
+		nameStyle.Render(m.profile.Name),
+		handleStyle.Render("@"+m.profile.Login),
+		"",
+		stats,
+	)
+
+	heatmap := m.renderRecentHeatmap(12)
+
+	leftPane := lipgloss.NewStyle().
+		Width(leftWidth).
+		Height(m.height).
+		Align(lipgloss.Center, lipgloss.Center).
+		Render(profile)
+
+	rightPane := lipgloss.NewStyle().
+		Width(rightWidth).
+		Height(m.height).
+		Align(lipgloss.Center, lipgloss.Center).
+		Render(heatmap)
+
+	return lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		leftPane,
+		rightPane,
+	)
+}
+
+func (m model) renderFullWide() string {
 	nameStyle := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color("#7DCFFF"))
