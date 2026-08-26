@@ -8,23 +8,42 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 )
 
+type ContributionDay struct {
+	Date              string `json:"date"`
+	ContributionCount int    `json:"contributionCount"`
+	Color             string `json:"color"`
+}
+
+type ContributionWeek struct {
+	ContributionDays []ContributionDay `json:"contributionDays"`
+}
+
 type Profile struct {
-	Login     string
-	Name      string
-	AvatarURL string
+	Login              string
+	Name               string
+	AvatarURL          string
+	TotalContributions int
+	Weeks              []ContributionWeek
 }
 
 type githubResponse struct {
 	Data struct {
 		Viewer struct {
-			Login     string `json:"login"`
-			Name      string `json:"name"`
-			AvatarURL string `json:"avatarUrl"`
+			Login                   string `json:"login"`
+			Name                    string `json:"name"`
+			AvatarURL               string `json:"avatarUrl"`
+			ContributionsCollection struct {
+				ContributionCalendar struct {
+					TotalContributions int                `json:"totalContributions"`
+					Weeks              []ContributionWeek `json:"weeks"`
+				} `json:"contributionCalendar"`
+			} `json:"contributionsCollection"`
 		} `json:"viewer"`
 	} `json:"data"`
 }
@@ -112,36 +131,245 @@ func (m model) View() tea.View {
 		return tea.NewView("Loading GitHub profile...")
 	}
 
-	titleStyle := lipgloss.NewStyle().
+	var content string
+
+	if isWide(m.width, m.height) {
+		content = m.renderWide()
+	} else {
+		content = m.renderTall()
+	}
+
+	v := tea.NewView(content)
+	v.AltScreen = true
+	return v
+}
+
+func isWide(width, height int) bool {
+	return width >= 90 && width > height*2
+}
+
+func isVeryWide(width int) bool {
+	return width >= 150
+}
+
+func (m model) renderWide() string {
+	nameStyle := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color("#7DCFFF"))
 
 	handleStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#A9B1D6"))
 
-	hintStyle := lipgloss.NewStyle().
+	statLabelStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#565F89"))
 
-	content := lipgloss.JoinVertical(
+	statValueStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("#C0CAF5"))
+
+	leftWidth := m.width / 3
+	rightWidth := m.width - leftWidth
+
+	today := m.todayContributions()
+	thisWeek := m.thisWeekContributions()
+	thisYear := m.profile.TotalContributions
+
+	stats := lipgloss.JoinVertical(
+		lipgloss.Left,
+		statLine("Today", today, statLabelStyle, statValueStyle),
+		statLine("This week", thisWeek, statLabelStyle, statValueStyle),
+		statLine("This year", thisYear, statLabelStyle, statValueStyle),
+	)
+
+	left := lipgloss.JoinVertical(
 		lipgloss.Center,
 		m.avatar,
 		"",
-		titleStyle.Render(m.profile.Name),
+		nameStyle.Render(m.profile.Name),
 		handleStyle.Render("@"+m.profile.Login),
 		"",
-		hintStyle.Render("q to quit"),
+		stats,
 	)
 
-	container := lipgloss.NewStyle().
+	var right string
+
+	if isVeryWide(m.width) {
+		right = m.renderYearHeatmap()
+	} else {
+		right = m.renderRecentHeatmap(12)
+	}
+
+	leftPane := lipgloss.NewStyle().
+		Width(leftWidth).
+		Height(m.height).
+		Align(lipgloss.Center, lipgloss.Center).
+		Render(left)
+
+	rightPane := lipgloss.NewStyle().
+		Width(rightWidth).
+		Height(m.height).
+		Align(lipgloss.Center, lipgloss.Center).
+		Render(right)
+
+	return lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		leftPane,
+		rightPane,
+	)
+}
+
+func (m model) renderTall() string {
+	return lipgloss.NewStyle().
 		Width(m.width).
 		Height(m.height).
 		Align(lipgloss.Center, lipgloss.Center).
-		Render(content)
+		Render("Tall layout coming soon...")
+}
 
-	v := tea.NewView(container)
-	v.AltScreen = true
+func statLine(
+	label string,
+	value int,
+	labelStyle lipgloss.Style,
+	valueStyle lipgloss.Style,
+) string {
+	return fmt.Sprintf(
+		"%s  %s",
+		labelStyle.Render(fmt.Sprintf("%-10s", label)),
+		valueStyle.Render(fmt.Sprintf("%4d", value)),
+	)
+}
 
-	return v
+func (m model) todayContributions() int {
+	today := time.Now().Format("2006-01-02")
+
+	for _, week := range m.profile.Weeks {
+		for _, day := range week.ContributionDays {
+			if day.Date == today {
+				return day.ContributionCount
+			}
+		}
+	}
+
+	return 0
+}
+
+func (m model) thisWeekContributions() int {
+	if len(m.profile.Weeks) == 0 {
+		return 0
+	}
+
+	total := 0
+	currentWeek := m.profile.Weeks[len(m.profile.Weeks)-1]
+
+	for _, day := range currentWeek.ContributionDays {
+		total += day.ContributionCount
+	}
+
+	return total
+}
+
+func (m model) renderRecentHeatmap(weekCount int) string {
+	if len(m.profile.Weeks) == 0 {
+		return "No contribution data"
+	}
+
+	weeks := m.profile.Weeks
+
+	if len(weeks) > weekCount {
+		weeks = weeks[len(weeks)-weekCount:]
+	}
+
+	return renderHeatmap(
+		fmt.Sprintf("Recent contributions · %d weeks", weekCount),
+		weeks,
+	)
+}
+
+func (m model) renderYearHeatmap() string {
+	if len(m.profile.Weeks) == 0 {
+		return "No contribution data"
+	}
+
+	return renderHeatmap(
+		"Contributions · Last 12 months",
+		m.profile.Weeks,
+	)
+}
+
+func renderHeatmap(
+	title string,
+	weeks []ContributionWeek,
+) string {
+	titleStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("#C0CAF5"))
+
+	rows := make([]string, 7)
+
+	for _, week := range weeks {
+		for dayIndex := 0; dayIndex < 7; dayIndex++ {
+			if dayIndex >= len(week.ContributionDays) {
+				rows[dayIndex] += "  "
+				continue
+			}
+
+			day := week.ContributionDays[dayIndex]
+
+			if day.Date == "" {
+				rows[dayIndex] += "  "
+				continue
+			}
+
+			rows[dayIndex] += contributionCell(
+				day.ContributionCount,
+			)
+		}
+	}
+
+	matrix := lipgloss.JoinVertical(
+		lipgloss.Left,
+		rows...,
+	)
+
+	return lipgloss.JoinVertical(
+		lipgloss.Left,
+		titleStyle.Render(title),
+		"",
+		matrix,
+	)
+}
+
+func contributionCell(count int) string {
+	style := lipgloss.NewStyle()
+
+	switch {
+	case count == 0:
+		style = style.Foreground(
+			lipgloss.Color("#292E42"),
+		)
+
+	case count <= 2:
+		style = style.Foreground(
+			lipgloss.Color("#3B4261"),
+		)
+
+	case count <= 5:
+		style = style.Foreground(
+			lipgloss.Color("#73DACA"),
+		)
+
+	case count <= 10:
+		style = style.Foreground(
+			lipgloss.Color("#41A6B5"),
+		)
+
+	default:
+		style = style.Foreground(
+			lipgloss.Color("#7DCFFF"),
+		)
+	}
+
+	return style.Render("■ ")
 }
 
 func fetchProfileCmd() tea.Cmd {
@@ -163,7 +391,11 @@ func fetchProfileCmd() tea.Cmd {
 	}
 }
 
-func renderAvatarCmd(path string, width, height int) tea.Cmd {
+func renderAvatarCmd(
+	path string,
+	width,
+	height int,
+) tea.Cmd {
 	return func() tea.Msg {
 		cmd := exec.Command(
 			"chafa",
@@ -176,7 +408,10 @@ func renderAvatarCmd(path string, width, height int) tea.Cmd {
 		output, err := cmd.Output()
 		if err != nil {
 			return errMsg{
-				fmt.Errorf("render avatar: %w", err),
+				err: fmt.Errorf(
+					"render avatar: %w",
+					err,
+				),
 			}
 		}
 
@@ -193,6 +428,18 @@ query {
     login
     name
     avatarUrl
+    contributionsCollection {
+      contributionCalendar {
+        totalContributions
+        weeks {
+          contributionDays {
+            date
+            contributionCount
+            color
+          }
+        }
+      }
+    }
   }
 }`
 
@@ -206,30 +453,60 @@ query {
 
 	output, err := cmd.Output()
 	if err != nil {
-		return Profile{}, fmt.Errorf("gh api graphql: %w", err)
+		return Profile{},
+			fmt.Errorf(
+				"gh api graphql: %w",
+				err,
+			)
 	}
 
 	var response githubResponse
 
-	if err := json.Unmarshal(output, &response); err != nil {
-		return Profile{}, fmt.Errorf("decode response: %w", err)
+	if err := json.Unmarshal(
+		output,
+		&response,
+	); err != nil {
+		return Profile{},
+			fmt.Errorf(
+				"decode response: %w",
+				err,
+			)
 	}
 
+	viewer := response.Data.Viewer
+	calendar :=
+		viewer.
+			ContributionsCollection.
+			ContributionCalendar
+
 	return Profile{
-		Login:     response.Data.Viewer.Login,
-		Name:      response.Data.Viewer.Name,
-		AvatarURL: response.Data.Viewer.AvatarURL,
+		Login:              viewer.Login,
+		Name:               viewer.Name,
+		AvatarURL:          viewer.AvatarURL,
+		TotalContributions: calendar.TotalContributions,
+		Weeks:              calendar.Weeks,
 	}, nil
 }
 
-func downloadAvatar(url string) (string, error) {
-	cacheDir := filepath.Join(os.TempDir(), "dev-dashboard")
+func downloadAvatar(
+	url string,
+) (string, error) {
+	cacheDir := filepath.Join(
+		os.TempDir(),
+		"dev-dashboard",
+	)
 
-	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
+	if err := os.MkdirAll(
+		cacheDir,
+		0o755,
+	); err != nil {
 		return "", err
 	}
 
-	path := filepath.Join(cacheDir, "avatar.png")
+	path := filepath.Join(
+		cacheDir,
+		"avatar.png",
+	)
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -238,10 +515,11 @@ func downloadAvatar(url string) (string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf(
-			"avatar download returned %s",
-			resp.Status,
-		)
+		return "",
+			fmt.Errorf(
+				"avatar download returned %s",
+				resp.Status,
+			)
 	}
 
 	file, err := os.Create(path)
@@ -250,7 +528,10 @@ func downloadAvatar(url string) (string, error) {
 	}
 	defer file.Close()
 
-	if _, err := io.Copy(file, resp.Body); err != nil {
+	if _, err := io.Copy(
+		file,
+		resp.Body,
+	); err != nil {
 		return "", err
 	}
 
@@ -258,32 +539,33 @@ func downloadAvatar(url string) (string, error) {
 }
 
 func avatarWidth(width int) int {
-	switch {
-	case width >= 100:
-		return 28
-	case width >= 70:
-		return 22
-	default:
-		return 16
+	if width >= 150 {
+		return 18
 	}
+
+	return 14
 }
 
 func avatarHeight(height int) int {
-	switch {
-	case height >= 40:
-		return 14
-	case height >= 28:
-		return 10
-	default:
-		return 8
+	if height >= 35 {
+		return 9
 	}
+
+	return 7
 }
 
 func main() {
-	p := tea.NewProgram(initialModel())
+	p := tea.NewProgram(
+		initialModel(),
+	)
 
 	if _, err := p.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "dev-dashboard: %v\n", err)
+		fmt.Fprintf(
+			os.Stderr,
+			"dev-dashboard: %v\n",
+			err,
+		)
+
 		os.Exit(1)
 	}
 }
