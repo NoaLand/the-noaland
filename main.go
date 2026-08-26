@@ -55,6 +55,8 @@ type profileLoadedMsg struct {
 
 type avatarRenderedMsg struct {
 	content string
+	width   int
+	height  int
 }
 
 type errMsg struct {
@@ -68,6 +70,9 @@ type model struct {
 	profile    *Profile
 	avatarPath string
 	avatar     string
+
+	avatarWidth  int
+	avatarHeight int
 
 	lastUpdated time.Time
 
@@ -114,11 +119,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 
-		if m.avatarPath != "" {
+		newAvatarWidth := avatarWidth(m.width)
+		newAvatarHeight := avatarHeight(m.height)
+
+		if m.avatarPath != "" &&
+			(newAvatarWidth != m.avatarWidth ||
+				newAvatarHeight != m.avatarHeight) {
+
+			m.avatarWidth = newAvatarWidth
+			m.avatarHeight = newAvatarHeight
+
 			return m, renderAvatarCmd(
 				m.avatarPath,
-				avatarWidth(m.width),
-				avatarHeight(m.height),
+				m.avatarWidth,
+				m.avatarHeight,
 			)
 		}
 
@@ -127,14 +141,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.avatarPath = msg.avatarPath
 		m.lastUpdated = time.Now()
 
+		m.avatarWidth = avatarWidth(m.width)
+		m.avatarHeight = avatarHeight(m.height)
+
 		return m, renderAvatarCmd(
 			m.avatarPath,
-			avatarWidth(m.width),
-			avatarHeight(m.height),
+			m.avatarWidth,
+			m.avatarHeight,
 		)
 
 	case avatarRenderedMsg:
-		m.avatar = msg.content
+		if msg.width == m.avatarWidth &&
+			msg.height == m.avatarHeight {
+			m.avatar = msg.content
+		}
 
 	case errMsg:
 		m.err = msg.err
@@ -786,6 +806,8 @@ func renderAvatarCmd(
 
 		return avatarRenderedMsg{
 			content: string(output),
+			width:   width,
+			height:  height,
 		}
 	}
 }
