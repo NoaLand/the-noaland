@@ -167,6 +167,9 @@ func (m model) renderWide() string {
 		Bold(true).
 		Foreground(lipgloss.Color("#C0CAF5"))
 
+	separatorStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#292E42"))
+
 	leftWidth := m.width / 3
 	rightWidth := m.width - leftWidth
 
@@ -181,12 +184,19 @@ func (m model) renderWide() string {
 		statLine("This year", thisYear, statLabelStyle, statValueStyle),
 	)
 
-	left := lipgloss.JoinVertical(
+	profileHeader := lipgloss.JoinVertical(
 		lipgloss.Center,
 		m.avatar,
 		"",
 		nameStyle.Render(m.profile.Name),
 		handleStyle.Render("@"+m.profile.Login),
+	)
+
+	left := lipgloss.JoinVertical(
+		lipgloss.Center,
+		profileHeader,
+		"",
+		separatorStyle.Render("──────────────"),
 		"",
 		stats,
 	)
@@ -232,11 +242,15 @@ func statLine(
 	labelStyle lipgloss.Style,
 	valueStyle lipgloss.Style,
 ) string {
-	return fmt.Sprintf(
-		"%s  %s",
-		labelStyle.Render(fmt.Sprintf("%-10s", label)),
-		valueStyle.Render(fmt.Sprintf("%4d", value)),
+	labelText := labelStyle.Render(
+		fmt.Sprintf("%-10s", label),
 	)
+
+	valueText := valueStyle.Render(
+		fmt.Sprintf("%5d", value),
+	)
+
+	return labelText + valueText
 }
 
 func (m model) todayContributions() int {
