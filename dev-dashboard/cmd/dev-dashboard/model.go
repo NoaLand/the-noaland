@@ -508,7 +508,7 @@ func renderCompactHeatmap(
 	rows := make([]string, 7)
 
 	for _, week := range weeks {
-		for dayIndex := 0; dayIndex < 7; dayIndex++ {
+		for dayIndex := range 7 {
 			if dayIndex >= len(week.ContributionDays) {
 				rows[dayIndex] += "  "
 				continue
@@ -594,7 +594,7 @@ func renderYearHeatmap(
 	rows := make([]string, 7)
 
 	for _, week := range weeks {
-		for dayIndex := 0; dayIndex < 7; dayIndex++ {
+		for dayIndex := range 7 {
 			if dayIndex >= len(week.ContributionDays) {
 				rows[dayIndex] += "  "
 				continue
@@ -959,10 +959,7 @@ func renderKittyImage(
 	first := true
 
 	for len(data) > 0 {
-		n := kittyChunkSize
-		if len(data) < n {
-			n = len(data)
-		}
+		n := min(len(data), kittyChunkSize)
 
 		chunk := data[:n]
 		data = data[n:]
