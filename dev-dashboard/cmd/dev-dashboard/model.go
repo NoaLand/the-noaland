@@ -3,13 +3,11 @@ package main
 import (
 	"bytes"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"image"
 	_ "image/jpeg"
 	"image/png"
 	"net/http"
-	"os/exec"
 	"strings"
 	"time"
 
