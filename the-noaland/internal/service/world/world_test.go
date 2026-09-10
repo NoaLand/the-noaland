@@ -4,7 +4,7 @@ import "testing"
 
 func TestWorldEvolves(t *testing.T) {
 	world := New()
-	worldTree := NewTree("world-tree")
+	worldTree := NewWorldTree("world-tree")
 
 	world.Add(worldTree)
 
