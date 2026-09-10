@@ -151,9 +151,9 @@ This keeps layout behavior consistent across every screen.
 
 ## Requirements
 
-### Go
+### Go (source builds only)
 
-The project is written in Go.
+Release binaries do not require Go. Go is needed only to build or develop from source.
 
 Check the required Go version in:
 
@@ -169,7 +169,9 @@ The GitHub screen currently uses the GitHub CLI:
 gh
 ```
 
-Authenticate before running:
+GitHub CLI is optional for Flip Clock. If gh is missing or not logged in, the GitHub screen shows setup instructions; press the right arrow to use Flip Clock. After installing or logging in, press r to retry (restart NoaLand if PATH changed).
+
+Authenticate for the GitHub screen:
 
 ```bash
 gh auth login
@@ -192,6 +194,23 @@ The GitHub avatar renderer currently uses the Kitty Graphics Protocol where supp
 Terminal capabilities may differ between Ghostty, Windows Terminal, Kitty, WezTerm, and other terminal emulators.
 
 ---
+
+## Download and run (no Go installation needed)
+
+Download an asset from [GitHub Releases](https://github.com/NoaLand/the-noaland/releases):
+
+| Platform | Archive |
+| --- | --- |
+| macOS Apple Silicon | noaland-VERSION-darwin-arm64.tar.gz |
+| macOS Intel | noaland-VERSION-darwin-amd64.tar.gz |
+| Windows x64 | noaland-VERSION-windows-amd64.zip |
+| Windows ARM64 | noaland-VERSION-windows-arm64.zip |
+
+Extract the archive, open a terminal in that directory, and run ./noaland on
+macOS or .\noaland.exe in PowerShell. Archives include README.md and LICENSE.
+Standalone binaries and SHA256SUMS.txt are also attached to each release.
+macOS standalone downloads may need executable permission; the tar.gz archive
+preserves it. Builds are not currently signed or notarized.
 
 ## Build
 
@@ -256,7 +275,7 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-The release workflow builds distributable binaries for supported platforms and publishes them to the corresponding GitHub Release.
+The release workflow tests and cross-compiles macOS and Windows (amd64 and arm64), then publishes binaries, archives, and SHA256SUMS.txt as release assets. All target builds must succeed before publishing. You can also run NoaLand Release manually with an existing version tag to attach assets to that release. The supplied tag selects the source version; publishing new application changes requires a tag containing those changes.
 
 ---
 
