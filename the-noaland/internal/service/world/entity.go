@@ -1,19 +1,19 @@
 package world
 
-type EntityID string
+type entityID string
 
 type Entity struct {
-	ID    EntityID
-	State int
+	id    entityID
+	state int
 }
 
-func NewEntity(id EntityID) *Entity {
+func NewEntity(id entityID) *Entity {
 	return &Entity{
-		ID:    id,
-		State: 0,
+		id:    id,
+		state: 0,
 	}
 }
 
 func (entity *Entity) Step() {
-	entity.State++
+	entity.state++
 }
