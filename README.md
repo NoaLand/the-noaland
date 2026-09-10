@@ -1,51 +1,321 @@
-# dev-dashboard
+# The NoaLand
 
-A lightweight terminal dashboard for my development environment.
+[![NoaLand CI](https://github.com/NoaLand/the-noaland/actions/workflows/noaland-ci.yml/badge.svg)](https://github.com/NoaLand/the-noaland/actions/workflows/noaland-ci.yml)
 
-The initial version focuses on displaying GitHub profile and contribution activity inside a TUI, designed to stay open as part of a terminal workspace.
+[![NoaLand Release](https://github.com/NoaLand/the-noaland/actions/workflows/noaland-release.yml/badge.svg)](https://github.com/NoaLand/the-noaland/actions/workflows/noaland-release.yml)
 
-## Goals
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-- Show GitHub profile information
-- Visualize contribution activity
-- Adapt to different terminal sizes
-- Work well inside Ghostty and Zellij
-- Stay lightweight and easy to extend
+**The NoaLand** is a personal terminal space built with Go and Bubble Tea.
 
-## Planned
+It started as a lightweight developer dashboard, but is gradually evolving into something broader: a collection of interactive terminal screens for information, tools, ambient visuals, and small experiments.
 
-- GitHub avatar
-- Daily / weekly / yearly contribution stats
+The goal is to keep it lightweight, responsive, and enjoyable to leave running as part of a terminal workspace.
+
+---
+
+## Screens
+
+### GitHub
+
+The first screen in The NoaLand.
+
+It displays personal GitHub activity inside the terminal, including:
+
+- GitHub profile information
+- Daily, weekly, and yearly contribution statistics
 - Contribution heatmap
-- Responsive compact and expanded layouts
-- Additional developer status panels in the future
+- Responsive layouts for different terminal sizes
+- GitHub avatar rendering on supported terminals
+- Periodic refresh of GitHub activity
 
-## Tech
+GitHub data is queried through the GitHub CLI and GraphQL API.
 
-- Go
-- Bubble Tea
-- Lip Gloss
-- GitHub CLI / GraphQL API
+---
 
-## Flip Clock
+### Flip Clock
 
-Run the dashboard with:
+A terminal split-flap clock built as the second screen in The NoaLand.
 
-    go run ./the-noaland/cmd/noaland
+The clock renders fixed-size digit cards and animates transitions between digits using Bubble Tea's update loop.
 
-Use left/right arrow keys to cycle between GitHub and Flip Clock. Press q, Esc,
-or Ctrl+C to exit. GitHub remains the initial screen.
+Example frame:
 
-Flip Clock shows 24-hour local time (hours, minutes, seconds), date, and timezone.
-Changed digits animate for 360 ms using split-flap text cards. The clock requires
-no image protocol or external service. Small windows fall back to plain time.
+```text
+╭───────╮ ╭───────╮     ╭───────╮ ╭───────╮
+│  ███  │ │   █   │     │ █████ │ │  ███  │
+│ █   █ │ │  ██   │     │     █ │ │ █   █ │
+│ █   █ │ │   █   │  •  │   ██  │ │    ██ │
+├───────┤ ├───────┤     ├───────┤ ├───────┤
+│ █   █ │ │   █   │  •  │  █    │ │     █ │
+│ █   █ │ │   █   │     │ █     │ │ █   █ │
+│  ███  │ │  ███  │     │ █████ │ │  ███  │
+╰───────╯ ╰───────╯     ╰───────╯ ╰───────╯
+```
 
-Wide, compact-wide, very-wide, and tall layouts have separate render methods.
-The flip-card UI component accepts digits, animation progress, and size; it does
-not know the window layout or own timers. Clock timers run only while its screen
-is active. Returning to the clock synchronizes immediately to current local time.
+The rendering component itself is timer-independent: the screen owns animation timing and supplies the previous digit, current digit, and animation progress.
 
-Tests cover digit geometry, midnight rollover, delayed ticks, stale timer
-messages after switching, all four layouts, and navigation between both screens.
-Animation smoothness and native image cleanup on page switches still require
-visual verification in the target terminal.
+---
+
+## Architecture
+
+The NoaLand is organized around three main concepts.
+
+### Application
+
+The top-level application acts as the coordinator.
+
+It is responsible for things such as:
+
+- Registering screens
+- Selecting the active screen
+- Handling global keyboard input
+- Switching between screens
+- Future automatic screen rotation
+- Tracking terminal dimensions
+- Selecting the active layout
+
+The application should not need to know how an individual screen implements its behavior.
+
+### Screens
+
+Each screen owns its own state, behavior, and rendering logic.
+
+Examples include:
+
+```text
+GitHub
+Flip Clock
+Mini World
+Weather
+News
+Agents
+Music
+...
+```
+
+Screens implement a common layout contract defined by The NoaLand.
+
+Layouts are intentionally treated as a small, fixed set of application-level contracts. If a new layout is introduced, every screen is expected to implement it.
+
+This keeps layout support explicit and lets the compiler expose missing implementations.
+
+### UI Components
+
+Screens can be composed from smaller reusable UI components.
+
+Current and future examples include:
+
+```text
+GitHub contribution heatmap
+GitHub avatar
+Flip-clock digit cards
+Panels
+Indicators
+ASCII visualizations
+```
+
+Components do not own application-level navigation or screen lifecycle.
+
+They are kept close to the feature that uses them until a genuine shared abstraction emerges.
+
+---
+
+## Responsive Layouts
+
+The NoaLand adapts to the dimensions of the current terminal.
+
+Layout selection is controlled by the application rather than individual screens.
+
+Conceptually:
+
+```text
+Terminal Size
+     │
+     ▼
+Layout Resolver
+     │
+     ▼
+Active Layout
+     │
+     ▼
+Active Screen
+     │
+     ▼
+RenderWide / RenderCompactWide / RenderTall / ...
+```
+
+This keeps layout behavior consistent across every screen.
+
+---
+
+## Requirements
+
+### Go
+
+The project is written in Go.
+
+Check the required Go version in:
+
+```text
+go.mod
+```
+
+### GitHub CLI
+
+The GitHub screen currently uses the GitHub CLI:
+
+```bash
+gh
+```
+
+Authenticate before running:
+
+```bash
+gh auth login
+```
+
+The screen queries GitHub through:
+
+```bash
+gh api graphql
+```
+
+### Terminal
+
+Most of The NoaLand is rendered with standard terminal text, Unicode, ANSI styling, Bubble Tea, and Lip Gloss.
+
+Some richer rendering features may depend on additional terminal capabilities.
+
+The GitHub avatar renderer currently uses the Kitty Graphics Protocol where supported.
+
+Terminal capabilities may differ between Ghostty, Windows Terminal, Kitty, WezTerm, and other terminal emulators.
+
+---
+
+## Build
+
+Clone the repository:
+
+```bash
+git clone https://github.com/NoaLand/the-noaland.git
+cd the-noaland
+```
+
+Build everything:
+
+```bash
+go build ./...
+```
+
+Run tests:
+
+```bash
+go test ./...
+```
+
+Run static analysis:
+
+```bash
+go vet ./...
+```
+
+Run the application:
+
+```bash
+go run ./the-noaland/cmd/noaland
+```
+
+---
+
+## CI
+
+The project uses GitHub Actions for continuous integration.
+
+The CI pipeline verifies:
+
+```text
+gofmt
+go vet
+go test
+go build
+```
+
+on changes to the main development branch and pull requests.
+
+---
+
+## Releases
+
+Release builds are produced through GitHub Actions when a version tag is pushed.
+
+For example:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The release workflow builds distributable binaries for supported platforms and publishes them to the corresponding GitHub Release.
+
+---
+
+## v0.1.0
+
+`v0.1.0` is the first milestone after the project evolved from `dev-dashboard` into **The NoaLand**.
+
+It introduces the first two screens:
+
+```text
+GitHub
+Flip Clock
+```
+
+and establishes the direction of the project as a multi-screen terminal environment rather than a single-purpose developer dashboard.
+
+---
+
+## Roadmap
+
+Some experiments currently planned for future screens include:
+
+```text
+Mini World Simulator
+Daily News
+ASCII Weather
+AI Agents Monitor
+Lyrics with Music
+Retro Holographic Display
+```
+
+The list is intentionally open-ended.
+
+The NoaLand is also a place to experiment with terminal UI architecture, animation, rendering, interaction, and developer tooling.
+
+---
+
+## Tech Stack
+
+Core dependencies:
+
+```text
+Go
+Bubble Tea
+Lip Gloss
+GitHub CLI
+GitHub GraphQL API
+```
+
+Terminal-specific rendering may additionally make use of protocols such as the Kitty Graphics Protocol.
+
+---
+
+## License
+
+Licensed under the Apache License 2.0.
+
+See: [LICENSE](./LICENSE) for details.
+
+---
+
+*Copyright © 2026 NoaLand*
