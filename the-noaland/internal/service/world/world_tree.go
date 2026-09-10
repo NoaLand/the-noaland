@@ -10,14 +10,14 @@ const (
 )
 
 type WorldTree struct {
-	identity entityID
-	appearance    worldTreeAppearance
+	identity   entityID
+	appearance worldTreeAppearance
 }
 
 func NewWorldTree(id entityID) *WorldTree {
 	return &WorldTree{
-		identity: id,
-		appearance:    WorldTreeSeed,
+		identity:   id,
+		appearance: WorldTreeSeed,
 	}
 }
 
