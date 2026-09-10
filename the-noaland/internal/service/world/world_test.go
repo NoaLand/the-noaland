@@ -1,29 +1,33 @@
 package world
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/NoaLand/the-noaland/the-noaland/internal/service/world/entity/worldtree"
+)
 
 func TestWorldEvolves(t *testing.T) {
 	world := New()
-	worldTree := NewWorldTree("world-tree")
+	worldTree := worldtree.New("world-tree")
 
 	world.Add(worldTree)
 
 	world.Step()
 	world.Step()
 
-	if worldTree.Appearance() != WorldTreeSeed {
+	if worldTree.Appearance() != worldtree.Seed {
 		t.Fatalf(
 			"expected world tree state to be %s, got %s",
-			WorldTreeSeed,
+			worldtree.Seed,
 			worldTree.Appearance(),
 		)
 	}
 
 	world.Step()
-	if worldTree.Appearance() != WorldTreeSprout {
+	if worldTree.Appearance() != worldtree.Sprout {
 		t.Fatalf(
 			"expected world tree state to be %s, got %s",
-			WorldTreeSprout,
+			worldtree.Sprout,
 			worldTree.Appearance(),
 		)
 	}
