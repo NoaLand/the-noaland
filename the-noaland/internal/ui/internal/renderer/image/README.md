@@ -80,3 +80,13 @@ Remove earlier overrides once to use defaults in the current PowerShell session:
 
 If overrides were added to a PowerShell profile or persistent user environment,
 remove them there as well. NoaLand never changes the user's environment settings.
+## Windows consoles without terminal identity variables
+
+When running on Windows with empty TERM_PROGRAM and TERM, outside known
+multiplexers and SSH sessions, auto defaults to Sixel even without WT_SESSION.
+This covers the reported PowerShell session where Yazi confirmed Sixel support.
+It is a product default, not proof that every Windows console supports Sixel.
+Older consoles can explicitly select blocks or none.
+
+Existing NOALAND_IMAGE_PROTOCOL overrides still take priority. Remove the
+override to test this rule; rebuild/restart NoaLand after updating the code.

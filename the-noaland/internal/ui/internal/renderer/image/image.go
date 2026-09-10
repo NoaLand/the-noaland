@@ -3,6 +3,7 @@ package image
 import (
 	"image"
 	"os"
+	"runtime"
 	"strings"
 )
 
@@ -36,6 +37,10 @@ func Render(img image.Image, cols, rows int) Result {
 // Environment detection is a heuristic, not a terminal capability probe.
 // Multiplexers can change capabilities; explicit overrides take priority.
 func selectProtocol(getenv func(string) string) string {
+	return selectProtocolForOS(getenv, runtime.GOOS)
+}
+
+func selectProtocolForOS(getenv func(string) string, goos string) string {
 	switch strings.ToLower(strings.TrimSpace(getenv("NOALAND_IMAGE_PROTOCOL"))) {
 	case "kitty":
 		return "kitty"
@@ -56,6 +61,13 @@ func selectProtocol(getenv func(string) string) string {
 	term := strings.ToLower(getenv("TERM"))
 	if program == "ghostty" || program == "kitty" || term == "xterm-kitty" || term == "xterm-ghostty" {
 		return "kitty"
+	}
+	// Native Windows consoles may omit every terminal identity variable.
+	// This is a product default for that environment, not a capability probe.
+	// Identified terminals, multiplexers, and remote sessions retain their rules.
+	if goos == "windows" && program == "" && term == "" &&
+		getenv("ZELLIJ") == "" && getenv("SSH_CONNECTION") == "" && getenv("SSH_TTY") == "" {
+		return "sixel"
 	}
 	return "blocks"
 }

@@ -27,7 +27,7 @@ func TestProtocolSelection(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := selectProtocol(func(key string) string { return tt.env[key] }); got != tt.want {
+			if got := selectProtocolForOS(func(key string) string { return tt.env[key] }, "linux"); got != tt.want {
 				t.Fatalf("got %q, want %q", got, tt.want)
 			}
 		})
@@ -78,5 +78,34 @@ func TestDisabledInvalidAndKittyResults(t *testing.T) {
 	}
 	if Render(nil, 2, 2) != (Result{}) || Render(image.NewRGBA(image.Rectangle{}), 2, 2) != (Result{}) {
 		t.Fatal("missing image produced output")
+	}
+}
+
+func TestWindowsWithoutTerminalIdentity(t *testing.T) {
+	for _, tt := range []struct {
+		name, goos string
+		env        map[string]string
+		want       string
+	}{
+		{"reported PowerShell environment", "windows", nil, "sixel"},
+		{"explicit auto", "windows", map[string]string{"NOALAND_IMAGE_PROTOCOL": "auto"}, "sixel"},
+		{"manual blocks", "windows", map[string]string{"NOALAND_IMAGE_PROTOCOL": "blocks"}, "blocks"},
+		{"manual kitty", "windows", map[string]string{"NOALAND_IMAGE_PROTOCOL": "kitty"}, "kitty"},
+		{"disabled", "windows", map[string]string{"NOALAND_IMAGE_PROTOCOL": "none"}, "none"},
+		{"vscode", "windows", map[string]string{"TERM_PROGRAM": "vscode"}, "blocks"},
+		{"dumb terminal", "windows", map[string]string{"TERM": "dumb"}, "blocks"},
+		{"tmux", "windows", map[string]string{"TMUX": "session"}, "blocks"},
+		{"zellij", "windows", map[string]string{"ZELLIJ": "session"}, "blocks"},
+		{"remote", "windows", map[string]string{"SSH_CONNECTION": "connection"}, "blocks"},
+		{"macOS unknown", "darwin", nil, "blocks"},
+		{"Linux unknown", "linux", nil, "blocks"},
+		{"Ghostty", "darwin", map[string]string{"TERM_PROGRAM": "ghostty"}, "kitty"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			got := selectProtocolForOS(func(k string) string { return tt.env[k] }, tt.goos)
+			if got != tt.want {
+				t.Fatalf("got %q, want %q", got, tt.want)
+			}
+		})
 	}
 }
