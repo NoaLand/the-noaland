@@ -33,8 +33,6 @@ func (t *WorldTree) step() {
 		t.state = WorldTreeYoung
 	case WorldTreeYoung:
 		t.state = WorldTreeMature
-	case WorldTreeMature:
-		t.state = WorldTreeMature
 	}
 }
 
