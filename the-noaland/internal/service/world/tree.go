@@ -5,9 +5,9 @@ type Tree struct {
 	state    int
 }
 
-func NewTree(id string) *Tree {
+func NewTree(id entityID) *Tree {
 	return &Tree{
-		identity: entityID(id),
+		identity: id,
 	}
 }
 
