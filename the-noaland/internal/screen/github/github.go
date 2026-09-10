@@ -10,6 +10,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/NoaLand/the-noaland/the-noaland/internal/screen"
+	githubservice "github.com/NoaLand/the-noaland/the-noaland/internal/service/github"
 )
 
 type redrawAvatarMsg struct{}
@@ -24,7 +25,7 @@ type errMsg struct {
 type Screen struct {
 	context screen.LayoutContext
 
-	profile *Profile
+	profile *githubservice.Profile
 	avatar  image.Image
 
 	lastUpdated time.Time
@@ -178,7 +179,7 @@ func (m Screen) renderYearHeatmap() string {
 
 func fetchProfileCmd() tea.Cmd {
 	return func() tea.Msg {
-		profile, err := fetchProfile()
+		profile, err := githubservice.FetchProfile()
 		if err != nil {
 			return errMsg{err}
 		}

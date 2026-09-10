@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/NoaLand/the-noaland/the-noaland/internal/screen"
+	githubservice "github.com/NoaLand/the-noaland/the-noaland/internal/service/github"
 )
 
 func TestGitHubScreenRetainsLoadedState(t *testing.T) {
@@ -12,7 +13,7 @@ func TestGitHubScreenRetainsLoadedState(t *testing.T) {
 	if instance.RenderWide(ctx).AltScreen {
 		t.Fatal("loading view should not enter alternate screen")
 	}
-	cmd := instance.Update(profileLoadedMsg{profile: Profile{Login: "noaland"}}, ctx)
+	cmd := instance.Update(profileLoadedMsg{profile: githubservice.Profile{Login: "noaland"}}, ctx)
 	if cmd == nil || instance.profile == nil || instance.profile.Login != "noaland" || instance.lastUpdated.IsZero() {
 		t.Fatal("profile update did not persist screen state or schedule redraw")
 	}

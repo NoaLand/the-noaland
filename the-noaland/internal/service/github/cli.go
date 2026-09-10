@@ -22,7 +22,8 @@ type githubResponse struct {
 	} `json:"data"`
 }
 
-func fetchProfile() (Profile, error) {
+// FetchProfile loads the authenticated user's profile using the GitHub CLI.
+func FetchProfile() (Profile, error) {
 	query := `
 query {
   viewer {

@@ -5,11 +5,13 @@ import (
 	"time"
 
 	"charm.land/lipgloss/v2"
+
+	githubservice "github.com/NoaLand/the-noaland/the-noaland/internal/service/github"
 )
 
 func renderHeatmap(
 	title string,
-	weeks []ContributionWeek,
+	weeks []githubservice.ContributionWeek,
 	showMonths bool,
 ) string {
 	titleStyle := lipgloss.NewStyle().
@@ -80,7 +82,7 @@ func renderHeatmap(
 }
 
 func buildMonthLabels(
-	weeks []ContributionWeek,
+	weeks []githubservice.ContributionWeek,
 ) string {
 	if len(weeks) == 0 {
 		return ""
