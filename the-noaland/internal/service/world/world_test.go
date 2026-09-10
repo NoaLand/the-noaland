@@ -4,15 +4,15 @@ import "testing"
 
 func TestWorldEvolves(t *testing.T) {
 	world := New()
-	seed := NewTree("seed")
+	world_tree := NewTree("world-tree")
 
-	world.Add(seed)
+	world.Add(world_tree)
 
 	world.Step()
 	world.Step()
 	world.Step()
 
-	if seed.state != 3 {
-		t.Fatalf("Expected seed state to be 3 after 3 steps, got %d", seed.state)
+	if world_tree.state != 3 {
+		t.Fatalf("Expected seed state to be 3 after 3 steps, got %d", world_tree.state)
 	}
 }
