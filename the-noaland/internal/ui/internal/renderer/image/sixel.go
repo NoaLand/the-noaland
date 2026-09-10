@@ -14,13 +14,20 @@ import (
 // Sixel is pixel-sized. Until cell-size queries are integrated with Bubble Tea,
 // use a documented estimate with an explicit override for font/DPI differences.
 func cellPixels(value string) (int, int) {
-	parts := strings.Split(strings.ToLower(value), "x")
+	return resolveCellPixels(value, systemCellPixels)
+}
+
+func resolveCellPixels(value string, detect func() (int, int)) (int, int) {
+	parts := strings.Split(strings.ToLower(strings.TrimSpace(value)), "x")
 	if len(parts) == 2 {
 		w, e1 := strconv.Atoi(parts[0])
 		h, e2 := strconv.Atoi(parts[1])
 		if e1 == nil && e2 == nil && w > 0 && h > 0 && w <= 128 && h <= 256 {
 			return w, h
 		}
+	}
+	if w, h := detect(); w > 0 && h > 0 && w <= 128 && h <= 256 {
+		return w, h
 	}
 	return 8, 16
 }

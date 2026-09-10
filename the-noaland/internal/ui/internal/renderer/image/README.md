@@ -59,3 +59,24 @@ visual verification on the user's terminal, including resizing and refresh.
 References:
 - https://yazi-rs.github.io/docs/image-preview/
 - https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-22-release/
+## Defaults without environment setup
+
+No environment variables are required: auto protocol selection is the default.
+Windows Terminal selects Sixel, and Ghostty/Kitty select Kitty. Unknown terminals
+retain the blocks fallback; an operating system alone does not imply support.
+
+Cell size precedence:
+1. Valid NOALAND_IMAGE_CELL_SIZE override.
+2. Visible native Windows console font metrics, if available.
+3. 8x16 pixel estimate.
+
+Windows Terminal, remote sessions, and hidden ConPTY consoles deliberately do
+not use legacy console font metrics, which may differ from the terminal font.
+This does not automatically detect Windows Terminal font zoom or DPI.
+
+Remove earlier overrides once to use defaults in the current PowerShell session:
+
+    Remove-Item Env:NOALAND_IMAGE_PROTOCOL, Env:NOALAND_IMAGE_CELL_SIZE -ErrorAction SilentlyContinue
+
+If overrides were added to a PowerShell profile or persistent user environment,
+remove them there as well. NoaLand never changes the user's environment settings.

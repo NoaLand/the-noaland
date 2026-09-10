@@ -43,7 +43,7 @@ func TestCellPixels(t *testing.T) {
 	}{
 		{"", 8, 16}, {"10x20", 10, 20}, {"9X18", 9, 18}, {"0x20", 8, 16}, {"-1x20", 8, 16}, {"1000x2000", 8, 16}, {"bad", 8, 16},
 	} {
-		w, h := cellPixels(tt.input)
+		w, h := resolveCellPixels(tt.input, func() (int, int) { return 0, 0 })
 		if w != tt.w || h != tt.h {
 			t.Fatalf("%q = %dx%d", tt.input, w, h)
 		}
@@ -62,5 +62,17 @@ func TestSixelOverrideAndMultiplexer(t *testing.T) {
 		if got := selectProtocol(func(k string) string { return tt.env[k] }); got != tt.want {
 			t.Fatalf("got %q", got)
 		}
+	}
+}
+
+func TestCellSizePriority(t *testing.T) {
+	if w, h := resolveCellPixels("10x20", func() (int, int) { t.Fatal("override must bypass detection"); return 0, 0 }); w != 10 || h != 20 {
+		t.Fatal("override lost")
+	}
+	if w, h := resolveCellPixels("", func() (int, int) { return 9, 18 }); w != 9 || h != 18 {
+		t.Fatal("system metrics ignored")
+	}
+	if w, h := resolveCellPixels("invalid", func() (int, int) { return -1, 0 }); w != 8 || h != 16 {
+		t.Fatal("fallback lost")
 	}
 }
