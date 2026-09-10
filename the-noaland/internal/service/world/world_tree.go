@@ -36,7 +36,7 @@ func (t *WorldTree) step() {
 	}
 }
 
-func (t *WorldTree) State() any {
+func (t *WorldTree) State() worldTreeState {
 	return t.state
 }
 
