@@ -1,4 +1,4 @@
-module github.com/NoaLand/dev-dashboard
+module github.com/NoaLand/the-noaland
 
 go 1.27.0
 
