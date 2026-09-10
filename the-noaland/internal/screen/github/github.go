@@ -1,4 +1,4 @@
-package main
+package github
 
 import (
 	"encoding/json"
@@ -90,4 +90,3 @@ query {
 		Weeks:              calendar.Weeks,
 	}, nil
 }
-

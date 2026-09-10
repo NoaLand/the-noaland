@@ -1,4 +1,4 @@
-package main
+package github
 
 import (
 	"bytes"
@@ -13,6 +13,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+
+	"github.com/NoaLand/the-noaland/the-noaland/internal/screen"
 )
 
 type redrawAvatarMsg struct{}
@@ -23,8 +25,9 @@ type errMsg struct {
 	err error
 }
 
-type githubScreen struct {
-	context LayoutContext
+// Screen displays a GitHub profile and contribution activity.
+type Screen struct {
+	context screen.LayoutContext
 
 	profile *Profile
 	avatar  image.Image
@@ -36,9 +39,12 @@ type githubScreen struct {
 
 const kittyChunkSize = 4096
 
-var _ Screen = (*githubScreen)(nil)
+// New creates a GitHub screen with no profile loaded.
+func New() *Screen {
+	return &Screen{}
+}
 
-func (m githubScreen) Init() tea.Cmd {
+func (m Screen) Init() tea.Cmd {
 	return tea.Batch(
 		fetchProfileCmd(),
 		refreshTick(),
@@ -54,7 +60,7 @@ func refreshTick() tea.Cmd {
 	)
 }
 
-func (m *githubScreen) Update(msg tea.Msg, ctx LayoutContext) tea.Cmd {
+func (m *Screen) Update(msg tea.Msg, ctx screen.LayoutContext) tea.Cmd {
 	m.context = ctx
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
@@ -91,7 +97,7 @@ func (m *githubScreen) Update(msg tea.Msg, ctx LayoutContext) tea.Cmd {
 	return nil
 }
 
-func (m githubScreen) view(render func() string) tea.View {
+func (m Screen) view(render func() string) tea.View {
 	if m.err != nil {
 		return tea.NewView(
 			fmt.Sprintf(
@@ -113,16 +119,16 @@ func (m githubScreen) view(render func() string) tea.View {
 	return v
 }
 
-func (m githubScreen) renderAvatarCmd() tea.Cmd {
+func (m Screen) renderAvatarCmd() tea.Cmd {
 	layout := m.context.Layout
 	if m.avatar == nil ||
-		layout == LayoutTall {
+		layout == screen.LayoutTall {
 		return nil
 	}
 
 	var row, col int
 
-	if layout == LayoutCompactWide {
+	if layout == screen.LayoutCompactWide {
 		row, col = m.compactAvatarPosition()
 	} else {
 		row, col = m.fullAvatarPosition()
@@ -142,7 +148,7 @@ func (m githubScreen) renderAvatarCmd() tea.Cmd {
 	return tea.Raw(raw)
 }
 
-func (m githubScreen) renderCompactWide() string {
+func (m Screen) renderCompactWide() string {
 	nameStyle := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color("#7DCFFF"))
@@ -236,7 +242,7 @@ func (m githubScreen) renderCompactWide() string {
 	)
 }
 
-func (m githubScreen) renderFullWide(layout Layout) string {
+func (m Screen) renderFullWide(layout screen.Layout) string {
 	nameStyle := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color("#7DCFFF"))
@@ -317,7 +323,7 @@ func (m githubScreen) renderFullWide(layout Layout) string {
 
 	var right string
 
-	if layout == LayoutVeryWide {
+	if layout == screen.LayoutVeryWide {
 		right = m.renderYearHeatmap()
 	} else {
 		right = m.renderRecentHeatmap(12)
@@ -342,7 +348,7 @@ func (m githubScreen) renderFullWide(layout Layout) string {
 	)
 }
 
-func (m githubScreen) renderTall() string {
+func (m Screen) renderTall() string {
 	return lipgloss.NewStyle().
 		Width(m.context.Width).
 		Height(m.context.Height).
@@ -367,7 +373,7 @@ func statLine(
 	return labelText + valueText
 }
 
-func (m githubScreen) todayContributions() int {
+func (m Screen) todayContributions() int {
 	today := time.Now().Format("2006-01-02")
 
 	for _, week := range m.profile.Weeks {
@@ -381,7 +387,7 @@ func (m githubScreen) todayContributions() int {
 	return 0
 }
 
-func (m githubScreen) thisWeekContributions() int {
+func (m Screen) thisWeekContributions() int {
 	if len(m.profile.Weeks) == 0 {
 		return 0
 	}
@@ -396,7 +402,7 @@ func (m githubScreen) thisWeekContributions() int {
 	return total
 }
 
-func (m githubScreen) renderRecentHeatmap(
+func (m Screen) renderRecentHeatmap(
 	weekCount int,
 ) string {
 	if len(m.profile.Weeks) == 0 {
@@ -491,7 +497,7 @@ func renderCompactHeatmap(
 	)
 }
 
-func (m githubScreen) renderYearHeatmap() string {
+func (m Screen) renderYearHeatmap() string {
 	if len(m.profile.Weeks) == 0 {
 		return "No contribution data"
 	}
@@ -861,7 +867,7 @@ func moveCursor(
 	)
 }
 
-func (m githubScreen) compactAvatarPosition() (int, int) {
+func (m Screen) compactAvatarPosition() (int, int) {
 	leftWidth := m.context.Width * 2 / 5
 
 	avatarCols := avatarWidth(m.context.Width)
@@ -880,7 +886,7 @@ func (m githubScreen) compactAvatarPosition() (int, int) {
 	return row, col
 }
 
-func (m githubScreen) fullAvatarPosition() (int, int) {
+func (m Screen) fullAvatarPosition() (int, int) {
 	leftWidth := m.context.Width / 3
 
 	avatarCols := avatarWidth(m.context.Width)
@@ -904,22 +910,22 @@ func (m githubScreen) fullAvatarPosition() (int, int) {
 	return row, col
 }
 
-func (m githubScreen) RenderTall(ctx LayoutContext) tea.View {
+func (m Screen) RenderTall(ctx screen.LayoutContext) tea.View {
 	m.context = ctx
 	return m.view(m.renderTall)
 }
 
-func (m githubScreen) RenderCompactWide(ctx LayoutContext) tea.View {
+func (m Screen) RenderCompactWide(ctx screen.LayoutContext) tea.View {
 	m.context = ctx
 	return m.view(m.renderCompactWide)
 }
 
-func (m githubScreen) RenderWide(ctx LayoutContext) tea.View {
+func (m Screen) RenderWide(ctx screen.LayoutContext) tea.View {
 	m.context = ctx
-	return m.view(func() string { return m.renderFullWide(LayoutWide) })
+	return m.view(func() string { return m.renderFullWide(screen.LayoutWide) })
 }
 
-func (m githubScreen) RenderVeryWide(ctx LayoutContext) tea.View {
+func (m Screen) RenderVeryWide(ctx screen.LayoutContext) tea.View {
 	m.context = ctx
-	return m.view(func() string { return m.renderFullWide(LayoutVeryWide) })
+	return m.view(func() string { return m.renderFullWide(screen.LayoutVeryWide) })
 }

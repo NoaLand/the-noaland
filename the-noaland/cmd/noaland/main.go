@@ -5,11 +5,13 @@ import (
 	"os"
 
 	tea "charm.land/bubbletea/v2"
+
+	"github.com/NoaLand/the-noaland/the-noaland/internal/app"
 )
 
 func main() {
 	p := tea.NewProgram(
-		initialModel(),
+		app.New(),
 	)
 
 	if _, err := p.Run(); err != nil {

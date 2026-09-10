@@ -1,22 +1,30 @@
-package main
+package app
 
-import tea "charm.land/bubbletea/v2"
+import (
+	tea "charm.land/bubbletea/v2"
+
+	"github.com/NoaLand/the-noaland/the-noaland/internal/screen"
+	githubscreen "github.com/NoaLand/the-noaland/the-noaland/internal/screen/github"
+)
+
+var _ screen.Screen = (*githubscreen.Screen)(nil)
 
 type model struct {
 	width, height int
-	screen        Screen
+	screen        screen.Screen
 }
 
-func initialModel() model {
-	return model{screen: &githubScreen{}}
+// New creates the application with its initial screen.
+func New() tea.Model {
+	return model{screen: githubscreen.New()}
 }
 
 func (m model) Init() tea.Cmd {
 	return m.screen.Init()
 }
 
-func (m model) layoutContext() LayoutContext {
-	return LayoutContext{
+func (m model) layoutContext() screen.LayoutContext {
+	return screen.LayoutContext{
 		Width:  m.width,
 		Height: m.height,
 		Layout: resolveLayout(m.width, m.height),
@@ -40,11 +48,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) View() tea.View {
 	ctx := m.layoutContext()
 	switch ctx.Layout {
-	case LayoutCompactWide:
+	case screen.LayoutCompactWide:
 		return m.screen.RenderCompactWide(ctx)
-	case LayoutWide:
+	case screen.LayoutWide:
 		return m.screen.RenderWide(ctx)
-	case LayoutVeryWide:
+	case screen.LayoutVeryWide:
 		return m.screen.RenderVeryWide(ctx)
 	default:
 		return m.screen.RenderTall(ctx)
