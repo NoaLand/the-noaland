@@ -6,7 +6,8 @@ code must not send cursor commands when there is no raw output.
 
 Auto selection uses environment hints, not active protocol probing:
 - Ghostty / Kitty: existing Kitty PNG output.
-- Other environments (including Windows Terminal, VS Code, and unknown hosts):
+- Windows Terminal (WT_SESSION): Sixel, requiring a version with Sixel support.
+- Other environments (including VS Code and unknown hosts):
   24-bit ANSI colored half-block cells. This is a low-resolution image fallback,
   not native pixel graphics.
 - tmux: blocks by default.
@@ -15,10 +16,10 @@ Auto selection uses environment hints, not active protocol probing:
 
 PowerShell is a shell, not an image protocol. The terminal hosting it must
 support ANSI colors and the upper-half-block character for the fallback.
-No Sixel support or terminal capability query is implemented in this version.
+Sixel is supported; active terminal capability queries are not yet implemented.
 
 Set NOALAND_IMAGE_PROTOCOL before starting NoaLand:
-auto (default), kitty, blocks, or none.
+auto (default), kitty, sixel, blocks, or none.
 Unknown values behave as auto. For example in PowerShell:
 
     $env:NOALAND_IMAGE_PROTOCOL = 'blocks'
@@ -32,3 +33,29 @@ The fallback composites alpha over RGB(26, 27, 38), assumes two image pixels per
 terminal cell, and resamples to the allocated cell area. Protocol encoding and
 inline sizing are covered by tests; actual host rendering still needs visual
 verification in Ghostty/Zellij and the user's Windows terminal.
+## Native Windows images
+
+Yazi reports Sixel for the user's Windows session. Select the same backend:
+
+    $env:NOALAND_IMAGE_PROTOCOL = 'sixel'
+    go run ./the-noaland/cmd/noaland
+
+This replaces any earlier persistent blocks override. Auto also selects Sixel
+when WT_SESSION is present (outside multiplexers). Windows Terminal requires
+version 1.22.10352.0 or newer for Sixel support.
+
+Sixel uses a quantized pixel image rather than text blocks. Its raster must be
+sized in pixels, while the layout allocates terminal cells. When terminal pixel
+dimensions are unavailable, this implementation estimates 8x16 pixels per cell.
+If the image is too small or extends past its placeholder, set the actual cell
+width and height for the terminal's font, zoom, and DPI, for example:
+
+    $env:NOALAND_IMAGE_CELL_SIZE = '10x20'
+
+Accepted cell dimensions are 1..128 by 1..256. Invalid values use 8x16.
+The estimate is not automatic font/DPI detection. Sixel output still needs
+visual verification on the user's terminal, including resizing and refresh.
+
+References:
+- https://yazi-rs.github.io/docs/image-preview/
+- https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-22-release/

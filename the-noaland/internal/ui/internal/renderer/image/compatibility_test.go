@@ -16,7 +16,7 @@ func TestProtocolSelection(t *testing.T) {
 		{"ghostty", map[string]string{"TERM_PROGRAM": "ghostty"}, "kitty"},
 		{"ghostty zellij", map[string]string{"TERM": "xterm-ghostty", "ZELLIJ": "0"}, "kitty"},
 		{"kitty", map[string]string{"TERM": "xterm-kitty"}, "kitty"},
-		{"windows terminal", map[string]string{"WT_SESSION": "session"}, "blocks"},
+		{"windows terminal", map[string]string{"WT_SESSION": "session"}, "sixel"},
 		{"vscode", map[string]string{"TERM_PROGRAM": "vscode"}, "blocks"},
 		{"unknown", nil, "blocks"},
 		{"tmux", map[string]string{"TERM_PROGRAM": "ghostty", "TMUX": "session"}, "blocks"},

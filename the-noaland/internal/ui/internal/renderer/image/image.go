@@ -12,8 +12,8 @@ type Result struct {
 	Raw    string
 }
 
-// Render uses Kitty in known compatible environments and inline cells elsewhere.
-// NOALAND_IMAGE_PROTOCOL can explicitly select auto, kitty, blocks, or none.
+// Render selects native Kitty/Sixel output for known hosts, or inline cells.
+// NOALAND_IMAGE_PROTOCOL can explicitly select auto, kitty, sixel, blocks, or none.
 func Render(img image.Image, cols, rows int) Result {
 	if img == nil || cols <= 0 || rows <= 0 || img.Bounds().Empty() {
 		return Result{}
@@ -21,6 +21,10 @@ func Render(img image.Image, cols, rows int) Result {
 	switch selectProtocol(os.Getenv) {
 	case "kitty":
 		if raw := renderKitty(img, cols, rows); raw != "" {
+			return Result{Raw: raw}
+		}
+	case "sixel":
+		if raw := renderSixel(img, cols, rows); raw != "" {
 			return Result{Raw: raw}
 		}
 	case "none":
@@ -37,11 +41,16 @@ func selectProtocol(getenv func(string) string) string {
 		return "kitty"
 	case "blocks":
 		return "blocks"
+	case "sixel":
+		return "sixel"
 	case "none":
 		return "none"
 	}
 	if getenv("TMUX") != "" {
 		return "blocks"
+	}
+	if getenv("WT_SESSION") != "" && getenv("ZELLIJ") == "" {
+		return "sixel"
 	}
 	program := strings.ToLower(getenv("TERM_PROGRAM"))
 	term := strings.ToLower(getenv("TERM"))
