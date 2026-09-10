@@ -38,9 +38,9 @@ func screenCommand(index int, generation uint64, cmd tea.Cmd) tea.Cmd {
 // New creates the application with its registered screens.
 func New() tea.Model {
 	return model{screens: []screen.Screen{
-		littleworldscreen.New(),
 		githubscreen.New(),
 		clockscreen.New(),
+		littleworldscreen.New(),
 	}}
 }
 

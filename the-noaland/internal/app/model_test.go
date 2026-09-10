@@ -163,7 +163,7 @@ func TestBatchCommandsKeepOwnership(t *testing.T) {
 
 func TestRegisteredClockAndRoundTripNavigation(t *testing.T) {
 	m := New().(model)
-	if len(m.screens) != 2 {
+	if len(m.screens) != 3 {
 		t.Fatal("clock not registered")
 	}
 	m.width, m.height = 90, 24
