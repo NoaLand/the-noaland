@@ -4,7 +4,7 @@ import (
 	"image"
 	"strings"
 
-	imagerenderer "github.com/NoaLand/the-noaland/the-noaland/internal/renderer/image"
+	imagerenderer "github.com/NoaLand/the-noaland/the-noaland/internal/ui/internal/renderer/image"
 )
 
 // Placeholder reserves terminal cells for an avatar.
