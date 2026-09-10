@@ -12,7 +12,7 @@ func TestWorldEvolves(t *testing.T) {
 	world.Step()
 	world.Step()
 
-	if worldTree.state != WorldTreeMature {
-		t.Fatalf("Expected world tree state to be mature after 3 steps, got %d", worldTree.state)
+	if worldTree.State() != WorldTreeMature {
+		t.Fatalf("Expected world tree state to be mature after 3 steps, got %s", worldTree.State())
 	}
 }

@@ -37,3 +37,22 @@ func (t *WorldTree) step() {
 		t.state = WorldTreeMature
 	}
 }
+
+func (t *WorldTree) State() any {
+	return t.state
+}
+
+func (s worldTreeState) String() string {
+	switch s {
+	case WorldTreeSeed:
+		return "Seed"
+	case WorldTreeSprout:
+		return "Sprout"
+	case WorldTreeYoung:
+		return "Young"
+	case WorldTreeMature:
+		return "Mature"
+	default:
+		return "Unknown"
+	}
+}
