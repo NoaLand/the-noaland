@@ -1,9 +1,9 @@
 package world
 
-type worldTreeState int
+type worldTreeAppearance int
 
 const (
-	WorldTreeSeed worldTreeState = iota
+	WorldTreeSeed worldTreeAppearance = iota
 	WorldTreeSprout
 	WorldTreeYoung
 	WorldTreeMature
@@ -11,13 +11,13 @@ const (
 
 type WorldTree struct {
 	identity entityID
-	state    worldTreeState
+	appearance    worldTreeAppearance
 }
 
 func NewWorldTree(id entityID) *WorldTree {
 	return &WorldTree{
 		identity: id,
-		state:    WorldTreeSeed,
+		appearance:    WorldTreeSeed,
 	}
 }
 
@@ -26,21 +26,21 @@ func (t *WorldTree) id() entityID {
 }
 
 func (t *WorldTree) step() {
-	switch t.state {
+	switch t.appearance {
 	case WorldTreeSeed:
-		t.state = WorldTreeSprout
+		t.appearance = WorldTreeSprout
 	case WorldTreeSprout:
-		t.state = WorldTreeYoung
+		t.appearance = WorldTreeYoung
 	case WorldTreeYoung:
-		t.state = WorldTreeMature
+		t.appearance = WorldTreeMature
 	}
 }
 
-func (t *WorldTree) State() worldTreeState {
-	return t.state
+func (t *WorldTree) Appearance() worldTreeAppearance {
+	return t.appearance
 }
 
-func (s worldTreeState) String() string {
+func (s worldTreeAppearance) String() string {
 	switch s {
 	case WorldTreeSeed:
 		return "Seed"
