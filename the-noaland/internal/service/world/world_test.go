@@ -10,12 +10,20 @@ func TestWorldEvolves(t *testing.T) {
 
 	world.Step()
 	world.Step()
-	world.Step()
 
-	if worldTree.Appearance() != WorldTreeMature {
+	if worldTree.Appearance() != WorldTreeSeed {
 		t.Fatalf(
 			"expected world tree state to be %s, got %s",
-			WorldTreeMature,
+			WorldTreeSeed,
+			worldTree.Appearance(),
+		)
+	}
+
+	world.Step()
+	if worldTree.Appearance() != WorldTreeSprout {
+		t.Fatalf(
+			"expected world tree state to be %s, got %s",
+			WorldTreeSprout,
 			worldTree.Appearance(),
 		)
 	}

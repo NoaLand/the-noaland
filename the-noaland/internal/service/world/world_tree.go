@@ -1,5 +1,31 @@
 package world
 
+type worldTreeState struct {
+	growth int
+}
+
+type WorldTree struct {
+	identity entityID
+	state    worldTreeState
+}
+
+func NewWorldTree(id entityID) *WorldTree {
+	return &WorldTree{
+		identity: id,
+		state: worldTreeState{
+			growth: 0,
+		},
+	}
+}
+
+func (t *WorldTree) id() entityID {
+	return t.identity
+}
+
+func (t *WorldTree) step() {
+	t.state.growth++
+}
+
 type worldTreeAppearance int
 
 const (
@@ -9,35 +35,17 @@ const (
 	WorldTreeMature
 )
 
-type WorldTree struct {
-	identity   entityID
-	appearance worldTreeAppearance
-}
-
-func NewWorldTree(id entityID) *WorldTree {
-	return &WorldTree{
-		identity:   id,
-		appearance: WorldTreeSeed,
-	}
-}
-
-func (t *WorldTree) id() entityID {
-	return t.identity
-}
-
-func (t *WorldTree) step() {
-	switch t.appearance {
-	case WorldTreeSeed:
-		t.appearance = WorldTreeSprout
-	case WorldTreeSprout:
-		t.appearance = WorldTreeYoung
-	case WorldTreeYoung:
-		t.appearance = WorldTreeMature
-	}
-}
-
 func (t *WorldTree) Appearance() worldTreeAppearance {
-	return t.appearance
+	switch {
+	case t.state.growth < 3:
+		return WorldTreeSeed
+	case t.state.growth < 6:
+		return WorldTreeSprout
+	case t.state.growth < 10:
+		return WorldTreeYoung
+	default:
+		return WorldTreeMature
+	}
 }
 
 func (s worldTreeAppearance) String() string {
