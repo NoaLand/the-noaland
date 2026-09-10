@@ -1,9 +1,12 @@
 package github
 
 import (
+	"fmt"
+
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/NoaLand/the-noaland/the-noaland/internal/screen"
+	"github.com/NoaLand/the-noaland/the-noaland/internal/ui/avatar"
 )
 
 func (m Screen) renderAvatarCmd() tea.Cmd {
@@ -21,7 +24,7 @@ func (m Screen) renderAvatarCmd() tea.Cmd {
 		row, col = m.fullAvatarPosition()
 	}
 
-	avatar := renderKittyImage(
+	avatar := avatar.RenderKitty(
 		m.avatar,
 		avatarWidth(m.context.Width),
 		avatarHeight(m.context.Height),
@@ -49,4 +52,15 @@ func avatarHeight(height int) int {
 	}
 
 	return 7
+}
+
+func moveCursor(
+	row int,
+	col int,
+) string {
+	return fmt.Sprintf(
+		"\x1b[%d;%dH",
+		row,
+		col,
+	)
 }

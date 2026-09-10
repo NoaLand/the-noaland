@@ -1,4 +1,4 @@
-package github
+package heatmap
 
 import (
 	"fmt"
@@ -9,7 +9,8 @@ import (
 	githubservice "github.com/NoaLand/the-noaland/the-noaland/internal/service/github"
 )
 
-func renderHeatmap(
+// Render draws GitHub contribution weeks, optionally including month labels.
+func Render(
 	title string,
 	weeks []githubservice.ContributionWeek,
 	showMonths bool,

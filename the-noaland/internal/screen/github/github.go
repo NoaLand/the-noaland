@@ -11,6 +11,7 @@ import (
 
 	"github.com/NoaLand/the-noaland/the-noaland/internal/screen"
 	githubservice "github.com/NoaLand/the-noaland/the-noaland/internal/service/github"
+	"github.com/NoaLand/the-noaland/the-noaland/internal/ui/heatmap"
 )
 
 type redrawAvatarMsg struct{}
@@ -155,7 +156,7 @@ func (m Screen) renderRecentHeatmap(
 		weeks = weeks[len(weeks)-weekCount:]
 	}
 
-	return renderHeatmap(
+	return heatmap.Render(
 		fmt.Sprintf(
 			"Recent contributions · %d weeks",
 			weekCount,
@@ -170,7 +171,7 @@ func (m Screen) renderYearHeatmap() string {
 		return "No contribution data"
 	}
 
-	return renderHeatmap(
+	return heatmap.Render(
 		"Contribution activity",
 		m.profile.Weeks,
 		true,

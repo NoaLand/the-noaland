@@ -1,4 +1,4 @@
-package github
+package avatar
 
 import (
 	"bytes"
@@ -11,7 +11,8 @@ import (
 
 const kittyChunkSize = 4096
 
-func avatarPlaceholder(
+// Placeholder reserves terminal cells for an avatar.
+func Placeholder(
 	width int,
 	height int,
 ) string {
@@ -26,7 +27,9 @@ func avatarPlaceholder(
 	return strings.Join(lines, "\n")
 }
 
-func renderKittyImage(
+// RenderKitty encodes an image using the Kitty graphics protocol.
+// It does not position the cursor or detect terminal capabilities.
+func RenderKitty(
 	img image.Image,
 	cols int,
 	rows int,
@@ -84,15 +87,4 @@ func renderKittyImage(
 	}
 
 	return out.String()
-}
-
-func moveCursor(
-	row int,
-	col int,
-) string {
-	return fmt.Sprintf(
-		"\x1b[%d;%dH",
-		row,
-		col,
-	)
 }

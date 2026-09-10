@@ -5,6 +5,7 @@ import (
 	"charm.land/lipgloss/v2"
 
 	"github.com/NoaLand/the-noaland/the-noaland/internal/screen"
+	"github.com/NoaLand/the-noaland/the-noaland/internal/ui/avatar"
 )
 
 func (m Screen) RenderWide(ctx screen.LayoutContext) tea.View {
@@ -71,7 +72,7 @@ func (m Screen) renderFullWide(right string) string {
 
 	profileHeader := lipgloss.JoinVertical(
 		lipgloss.Center,
-		avatarPlaceholder(
+		avatar.Placeholder(
 			avatarCols,
 			avatarRows,
 		),
