@@ -6,10 +6,12 @@ import (
 	"github.com/NoaLand/the-noaland/the-noaland/internal/screen"
 	clockscreen "github.com/NoaLand/the-noaland/the-noaland/internal/screen/clock"
 	githubscreen "github.com/NoaLand/the-noaland/the-noaland/internal/screen/github"
+	littleworldscreen "github.com/NoaLand/the-noaland/the-noaland/internal/screen/littleworld"
 )
 
 var _ screen.Screen = (*githubscreen.Screen)(nil)
 var _ screen.Screen = (*clockscreen.Screen)(nil)
+var _ screen.Screen = (*littleworldscreen.Screen)(nil)
 
 type model struct {
 	width, height int
@@ -35,7 +37,11 @@ func screenCommand(index int, generation uint64, cmd tea.Cmd) tea.Cmd {
 
 // New creates the application with its registered screens.
 func New() tea.Model {
-	return model{screens: []screen.Screen{githubscreen.New(), clockscreen.New()}}
+	return model{screens: []screen.Screen{
+		littleworldscreen.New(),
+		githubscreen.New(),
+		clockscreen.New(),
+	}}
 }
 
 func (m model) Init() tea.Cmd {
