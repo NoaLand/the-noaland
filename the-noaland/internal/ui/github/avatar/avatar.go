@@ -25,5 +25,14 @@ func Placeholder(
 
 // Render produces an avatar image using the shared terminal image renderer.
 func Render(img image.Image, cols, rows int) string {
-	return imagerenderer.Render(img, cols, rows)
+	return imagerenderer.Render(img, cols, rows).Raw
+}
+
+// View renders an inline avatar or reserves cells for out-of-band graphics.
+func View(img image.Image, cols, rows int) string {
+	result := imagerenderer.Render(img, cols, rows)
+	if result.Inline != "" {
+		return result.Inline
+	}
+	return Placeholder(cols, rows)
 }

@@ -13,7 +13,7 @@ import (
 func TestRenderKittyImagePayload(t *testing.T) {
 	img := image.NewNRGBA(image.Rect(0, 0, 2, 2))
 	img.SetNRGBA(0, 0, color.NRGBA{R: 255, A: 255})
-	output := Render(img, 14, 7)
+	output := renderKitty(img, 14, 7)
 	header := "\x1b_Ga=T,f=100,c=14,r=7,q=2,m=0;"
 	if !strings.HasPrefix(output, header) || !strings.HasSuffix(output, "\x1b\\") {
 		t.Fatal("invalid Kitty dimensions or framing")

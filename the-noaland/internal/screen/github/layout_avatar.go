@@ -30,6 +30,10 @@ func (m Screen) renderAvatarCmd() tea.Cmd {
 		avatarHeight(m.context.Height),
 	)
 
+	if avatar == "" {
+		return nil
+	}
+
 	raw :=
 		moveCursor(row, col) +
 			avatar +

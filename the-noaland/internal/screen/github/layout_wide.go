@@ -72,7 +72,7 @@ func (m Screen) renderFullWide(right string) string {
 
 	profileHeader := lipgloss.JoinVertical(
 		lipgloss.Center,
-		avatar.Placeholder(
+		avatar.View(m.avatar,
 			avatarCols,
 			avatarRows,
 		),

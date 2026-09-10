@@ -76,7 +76,7 @@ func (m Screen) renderCompactWide() string {
 
 	profile := lipgloss.JoinVertical(
 		lipgloss.Center,
-		avatar.Placeholder(
+		avatar.View(m.avatar,
 			avatarCols,
 			avatarRows,
 		),
