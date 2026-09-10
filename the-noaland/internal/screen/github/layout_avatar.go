@@ -1,0 +1,52 @@
+package github
+
+import (
+	tea "charm.land/bubbletea/v2"
+
+	"github.com/NoaLand/the-noaland/the-noaland/internal/screen"
+)
+
+func (m Screen) renderAvatarCmd() tea.Cmd {
+	layout := m.context.Layout
+	if m.avatar == nil ||
+		layout == screen.LayoutTall {
+		return nil
+	}
+
+	var row, col int
+
+	if layout == screen.LayoutCompactWide {
+		row, col = m.compactAvatarPosition()
+	} else {
+		row, col = m.fullAvatarPosition()
+	}
+
+	avatar := renderKittyImage(
+		m.avatar,
+		avatarWidth(m.context.Width),
+		avatarHeight(m.context.Height),
+	)
+
+	raw :=
+		moveCursor(row, col) +
+			avatar +
+			"\x1b[H"
+
+	return tea.Raw(raw)
+}
+
+func avatarWidth(width int) int {
+	if width >= 150 {
+		return 18
+	}
+
+	return 14
+}
+
+func avatarHeight(height int) int {
+	if height >= 35 {
+		return 9
+	}
+
+	return 7
+}
