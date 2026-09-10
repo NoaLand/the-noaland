@@ -20,5 +20,8 @@ type Screen interface {
 	RenderVeryWide(LayoutContext) tea.View
 }
 
-// ActivatedMsg asks a screen to redraw out-of-band content after page switching.
+// ActivatedMsg starts foreground work and redraws content on initial display or page switching.
 type ActivatedMsg struct{}
+
+// DeactivatedMsg lets a screen stop foreground-only work when leaving a page.
+type DeactivatedMsg struct{}

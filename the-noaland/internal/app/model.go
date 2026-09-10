@@ -4,10 +4,12 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/NoaLand/the-noaland/the-noaland/internal/screen"
+	clockscreen "github.com/NoaLand/the-noaland/the-noaland/internal/screen/clock"
 	githubscreen "github.com/NoaLand/the-noaland/the-noaland/internal/screen/github"
 )
 
 var _ screen.Screen = (*githubscreen.Screen)(nil)
+var _ screen.Screen = (*clockscreen.Screen)(nil)
 
 type model struct {
 	width, height int
@@ -33,13 +35,16 @@ func screenCommand(index int, generation uint64, cmd tea.Cmd) tea.Cmd {
 
 // New creates the application with its registered screens.
 func New() tea.Model {
-	return model{screens: []screen.Screen{githubscreen.New()}}
+	return model{screens: []screen.Screen{githubscreen.New(), clockscreen.New()}}
 }
 
 func (m model) Init() tea.Cmd {
 	commands := make([]tea.Cmd, 0, len(m.screens))
 	for i, s := range m.screens {
 		commands = append(commands, screenCommand(i, m.generation, s.Init()))
+	}
+	if len(m.screens) > 0 {
+		commands = append(commands, m.updateScreen(m.active, screen.ActivatedMsg{}))
 	}
 	return tea.Batch(commands...)
 }
@@ -56,9 +61,10 @@ func (m model) changeScreen(delta int) (tea.Model, tea.Cmd) {
 	if len(m.screens) < 2 {
 		return m, nil
 	}
+	deactivate := m.updateScreen(m.active, screen.DeactivatedMsg{})
 	m.active = (m.active + delta + len(m.screens)) % len(m.screens)
 	m.generation++
-	return m, tea.Batch(tea.ClearScreen, m.updateScreen(m.active, screen.ActivatedMsg{}))
+	return m, tea.Batch(tea.ClearScreen, deactivate, m.updateScreen(m.active, screen.ActivatedMsg{}))
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {

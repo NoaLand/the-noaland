@@ -45,7 +45,7 @@ func (s *recordingScreen) RenderVeryWide(ctx screen.LayoutContext) tea.View {
 func TestModelDispatchesLayoutAfterResize(t *testing.T) {
 	recorded := &recordingScreen{}
 	m := model{screens: []screen.Screen{recorded}}
-	if got := m.Init()().(screenMsg).message; got != "init" {
+	if got := m.Init()().(tea.BatchMsg)[0]().(screenMsg).message; got != "init" {
 		t.Fatalf("Init command = %v", got)
 	}
 	for _, tt := range []struct {
@@ -158,5 +158,35 @@ func TestBatchCommandsKeepOwnership(t *testing.T) {
 		if msg.index != 0 {
 			t.Fatal("batch lost originating screen")
 		}
+	}
+}
+
+func TestRegisteredClockAndRoundTripNavigation(t *testing.T) {
+	m := New().(model)
+	if len(m.screens) != 2 {
+		t.Fatal("clock not registered")
+	}
+	m.width, m.height = 90, 24
+	next, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyRight})
+	m = next.(model)
+	if m.active != 1 || !m.View().AltScreen {
+		t.Fatal("clock not reachable")
+	}
+	next, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyLeft})
+	m = next.(model)
+	if m.active != 0 {
+		t.Fatal("GitHub not reachable on return")
+	}
+}
+
+func TestLeavingScreenReceivesDeactivation(t *testing.T) {
+	first, second := &recordingScreen{}, &recordingScreen{}
+	m := model{screens: []screen.Screen{first, second}}
+	m.Update(tea.KeyPressMsg{Code: tea.KeyRight})
+	if _, ok := first.message.(screen.DeactivatedMsg); !ok {
+		t.Fatal("background work not notified")
+	}
+	if _, ok := second.message.(screen.ActivatedMsg); !ok {
+		t.Fatal("new screen not activated")
 	}
 }
