@@ -28,15 +28,6 @@ func (t *WorldTree) Step() {
 	t.state.growth++
 }
 
-type worldTreeAppearance int
-
-const (
-	Seed worldTreeAppearance = iota
-	Sprout
-	Young
-	Mature
-)
-
 func (t *WorldTree) Appearance() worldTreeAppearance {
 	switch {
 	case t.state.growth < 3:
@@ -47,20 +38,5 @@ func (t *WorldTree) Appearance() worldTreeAppearance {
 		return Young
 	default:
 		return Mature
-	}
-}
-
-func (s worldTreeAppearance) String() string {
-	switch s {
-	case Seed:
-		return "Seed"
-	case Sprout:
-		return "Sprout"
-	case Young:
-		return "Young"
-	case Mature:
-		return "Mature"
-	default:
-		return "Unknown"
 	}
 }
