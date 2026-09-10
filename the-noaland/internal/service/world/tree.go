@@ -2,12 +2,12 @@ package world
 
 type Tree struct {
 	identity entityID
-	state int
+	state    int
 }
 
 func NewTree(id string) *Tree {
 	return &Tree{
-		identity : entityID(id),
+		identity: entityID(id),
 	}
 }
 
