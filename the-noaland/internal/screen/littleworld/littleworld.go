@@ -5,9 +5,9 @@ import (
 	"github.com/NoaLand/the-noaland/the-noaland/internal/screen"
 )
 
-type Screen struct{
+type Screen struct {
 	context screen.LayoutContext
-	err error
+	err     error
 }
 
 func New() *Screen {
