@@ -6,7 +6,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/NoaLand/the-noaland/the-noaland/internal/screen"
-	"github.com/NoaLand/the-noaland/the-noaland/internal/ui/avatar"
+	"github.com/NoaLand/the-noaland/the-noaland/internal/ui/github/avatar"
 )
 
 func (m Screen) renderAvatarCmd() tea.Cmd {
@@ -24,7 +24,7 @@ func (m Screen) renderAvatarCmd() tea.Cmd {
 		row, col = m.fullAvatarPosition()
 	}
 
-	avatar := avatar.RenderKitty(
+	avatar := avatar.Render(
 		m.avatar,
 		avatarWidth(m.context.Width),
 		avatarHeight(m.context.Height),

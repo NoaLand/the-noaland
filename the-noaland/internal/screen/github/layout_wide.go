@@ -5,7 +5,7 @@ import (
 	"charm.land/lipgloss/v2"
 
 	"github.com/NoaLand/the-noaland/the-noaland/internal/screen"
-	"github.com/NoaLand/the-noaland/the-noaland/internal/ui/avatar"
+	"github.com/NoaLand/the-noaland/the-noaland/internal/ui/github/avatar"
 )
 
 func (m Screen) RenderWide(ctx screen.LayoutContext) tea.View {

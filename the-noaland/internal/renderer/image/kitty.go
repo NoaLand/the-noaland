@@ -1,4 +1,4 @@
-package avatar
+package image
 
 import (
 	"bytes"
@@ -11,25 +11,9 @@ import (
 
 const kittyChunkSize = 4096
 
-// Placeholder reserves terminal cells for an avatar.
-func Placeholder(
-	width int,
-	height int,
-) string {
-	line := strings.Repeat(" ", width)
-
-	lines := make([]string, height)
-
-	for i := range lines {
-		lines[i] = line
-	}
-
-	return strings.Join(lines, "\n")
-}
-
-// RenderKitty encodes an image using the Kitty graphics protocol.
+// renderKitty encodes an image using the Kitty graphics protocol.
 // It does not position the cursor or detect terminal capabilities.
-func RenderKitty(
+func renderKitty(
 	img image.Image,
 	cols int,
 	rows int,

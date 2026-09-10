@@ -11,7 +11,7 @@ import (
 
 	"github.com/NoaLand/the-noaland/the-noaland/internal/screen"
 	githubservice "github.com/NoaLand/the-noaland/the-noaland/internal/service/github"
-	"github.com/NoaLand/the-noaland/the-noaland/internal/ui/heatmap"
+	"github.com/NoaLand/the-noaland/the-noaland/internal/ui/github/heatmap"
 )
 
 type redrawAvatarMsg struct{}
