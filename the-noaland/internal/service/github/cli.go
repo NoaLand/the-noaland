@@ -24,6 +24,11 @@ type githubResponse struct {
 
 // FetchProfile loads the authenticated user's profile using the GitHub CLI.
 func FetchProfile() (Profile, error) {
+	host := githubHost()
+	path, err := checkCLI(exec.LookPath, runCredentialCheck, host)
+	if err != nil {
+		return Profile{}, err
+	}
 	query := `
 query {
   viewer {
@@ -47,9 +52,10 @@ query {
 }`
 
 	cmd := exec.Command(
-		"gh",
+		path,
 		"api",
 		"graphql",
+		"--hostname", host,
 		"-f",
 		"query="+query,
 	)

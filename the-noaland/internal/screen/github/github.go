@@ -79,6 +79,7 @@ func (m *Screen) Update(msg tea.Msg, ctx screen.LayoutContext) tea.Cmd {
 		}
 
 	case profileLoadedMsg:
+		m.err = nil
 		m.profile = &msg.profile
 		m.avatar = msg.avatar
 		m.lastUpdated = time.Now()
@@ -97,12 +98,7 @@ func (m *Screen) Update(msg tea.Msg, ctx screen.LayoutContext) tea.Cmd {
 
 func (m Screen) view(render func() string) tea.View {
 	if m.err != nil {
-		return tea.NewView(
-			fmt.Sprintf(
-				"Error: %v\n\nPress q to quit.",
-				m.err,
-			),
-		)
+		return m.errorView()
 	}
 
 	if m.profile == nil {
@@ -238,7 +234,7 @@ func redrawAvatarLater() tea.Cmd {
 
 func (m Screen) renderAvatarCmd() tea.Cmd {
 	layout := m.context.Layout
-	if m.avatar == nil ||
+	if m.err != nil || m.avatar == nil ||
 		layout == screen.LayoutTall {
 		return nil
 	}

@@ -1,6 +1,9 @@
 package github
 
 import (
+	"fmt"
+	"image"
+	"strings"
 	"testing"
 
 	"github.com/NoaLand/the-noaland/the-noaland/internal/screen"
@@ -19,5 +22,34 @@ func TestGitHubScreenRetainsLoadedState(t *testing.T) {
 	}
 	if !instance.RenderWide(ctx).AltScreen {
 		t.Fatal("loaded view should enter alternate screen")
+	}
+}
+
+func TestSetupMessagesAndRetryRecovery(t *testing.T) {
+	ctx := screen.LayoutContext{Width: 90, Height: 24, Layout: screen.LayoutWide}
+	for _, tt := range []struct {
+		err     error
+		message string
+	}{
+		{githubservice.ErrCLINotInstalled, "https://cli.github.com"},
+		{fmt.Errorf("wrapped: %w", githubservice.ErrNotAuthenticated), "gh auth login"},
+	} {
+		instance := New()
+		instance.Update(errMsg{tt.err}, ctx)
+		for _, view := range []string{instance.RenderWide(ctx).Content, instance.RenderCompactWide(ctx).Content, instance.RenderVeryWide(ctx).Content, instance.RenderTall(ctx).Content} {
+			for _, text := range []string{tt.message, "Flip Clock", "retry", "→"} {
+				if !strings.Contains(view, text) {
+					t.Fatalf("missing setup hint %q", text)
+				}
+			}
+		}
+		instance.avatar = image.NewRGBA(image.Rect(0, 0, 2, 2))
+		if instance.renderAvatarCmd() != nil {
+			t.Fatal("old avatar must not cover setup message")
+		}
+		instance.Update(profileLoadedMsg{profile: githubservice.Profile{Login: "ready"}}, ctx)
+		if instance.err != nil || strings.Contains(instance.RenderWide(ctx).Content, tt.message) {
+			t.Fatal("successful retry did not clear error")
+		}
 	}
 }
