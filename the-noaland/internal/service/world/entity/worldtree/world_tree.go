@@ -28,7 +28,17 @@ func (t *WorldTree) Step() {
 	t.state.growth++
 }
 
-func (t *WorldTree) Appearance() worldTreeAppearance {
+type Expressions struct {
+	Appearance worldTreeAppearance
+}
+
+func (t *WorldTree) Express() *Expressions {
+	return &Expressions{
+		Appearance: t.appearance(),
+	}
+}
+
+func (t *WorldTree) appearance() worldTreeAppearance {
 	switch {
 	case t.state.growth < 3:
 		return Seed
