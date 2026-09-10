@@ -117,9 +117,12 @@ func (m model) View() tea.View {
 
 	var content string
 
-	if isWide(m.width, m.height) {
-		content = m.renderWide()
-	} else {
+	switch layout := resolveLayout(m.width, m.height); layout {
+	case LayoutCompactWide:
+		content = m.renderCompactWide()
+	case LayoutWide, LayoutVeryWide:
+		content = m.renderFullWide(layout)
+	default:
 		content = m.renderTall()
 	}
 
@@ -130,14 +133,15 @@ func (m model) View() tea.View {
 }
 
 func (m model) renderAvatarCmd() tea.Cmd {
+	layout := resolveLayout(m.width, m.height)
 	if m.avatar == nil ||
-		!isWide(m.width, m.height) {
+		layout == LayoutTall {
 		return nil
 	}
 
 	var row, col int
 
-	if isCompactWide(m.width, m.height) {
+	if layout == LayoutCompactWide {
 		row, col = m.compactAvatarPosition()
 	} else {
 		row, col = m.fullAvatarPosition()
@@ -155,26 +159,6 @@ func (m model) renderAvatarCmd() tea.Cmd {
 			"\x1b[H"
 
 	return tea.Raw(raw)
-}
-
-func isWide(width, height int) bool {
-	return width >= 90 && width > height*2
-}
-
-func isVeryWide(width int) bool {
-	return width >= 150
-}
-
-func isCompactWide(width, height int) bool {
-	return width >= 90 && height < 24
-}
-
-func (m model) renderWide() string {
-	if isCompactWide(m.width, m.height) {
-		return m.renderCompactWide()
-	}
-
-	return m.renderFullWide()
 }
 
 func (m model) renderCompactWide() string {
@@ -271,7 +255,7 @@ func (m model) renderCompactWide() string {
 	)
 }
 
-func (m model) renderFullWide() string {
+func (m model) renderFullWide(layout Layout) string {
 	nameStyle := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color("#7DCFFF"))
@@ -352,7 +336,7 @@ func (m model) renderFullWide() string {
 
 	var right string
 
-	if isVeryWide(m.width) {
+	if layout == LayoutVeryWide {
 		right = m.renderYearHeatmap()
 	} else {
 		right = m.renderRecentHeatmap(12)
@@ -938,4 +922,3 @@ func (m model) fullAvatarPosition() (int, int) {
 
 	return row, col
 }
-
