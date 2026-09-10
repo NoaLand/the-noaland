@@ -11,24 +11,54 @@ var _ screen.Screen = (*githubscreen.Screen)(nil)
 
 type model struct {
 	width, height int
-	screen        screen.Screen
+	screens       []screen.Screen
+	active        int
+	generation    uint64
 }
 
-// New creates the application with its initial screen.
+// screenMsg routes asynchronous results back to their owner. The generation
+// prevents delayed raw graphics from a previous visit drawing on the new page.
+type screenMsg struct {
+	index      int
+	generation uint64
+	message    tea.Msg
+}
+
+func screenCommand(index int, generation uint64, cmd tea.Cmd) tea.Cmd {
+	if cmd == nil {
+		return nil
+	}
+	return func() tea.Msg { return screenMsg{index, generation, cmd()} }
+}
+
+// New creates the application with its registered screens.
 func New() tea.Model {
-	return model{screen: githubscreen.New()}
+	return model{screens: []screen.Screen{githubscreen.New()}}
 }
 
 func (m model) Init() tea.Cmd {
-	return m.screen.Init()
+	commands := make([]tea.Cmd, 0, len(m.screens))
+	for i, s := range m.screens {
+		commands = append(commands, screenCommand(i, m.generation, s.Init()))
+	}
+	return tea.Batch(commands...)
 }
 
 func (m model) layoutContext() screen.LayoutContext {
-	return screen.LayoutContext{
-		Width:  m.width,
-		Height: m.height,
-		Layout: resolveLayout(m.width, m.height),
+	return screen.LayoutContext{Width: m.width, Height: m.height, Layout: resolveLayout(m.width, m.height)}
+}
+
+func (m model) updateScreen(index int, msg tea.Msg) tea.Cmd {
+	return screenCommand(index, m.generation, m.screens[index].Update(msg, m.layoutContext()))
+}
+
+func (m model) changeScreen(delta int) (tea.Model, tea.Cmd) {
+	if len(m.screens) < 2 {
+		return m, nil
 	}
+	m.active = (m.active + delta + len(m.screens)) % len(m.screens)
+	m.generation++
+	return m, tea.Batch(tea.ClearScreen, m.updateScreen(m.active, screen.ActivatedMsg{}))
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -37,24 +67,55 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
 			return m, tea.Quit
+		case "left":
+			return m.changeScreen(-1)
+		case "right":
+			return m.changeScreen(1)
+		}
+	case screenMsg:
+		if msg.index < 0 || msg.index >= len(m.screens) {
+			return m, nil
+		}
+		switch result := msg.message.(type) {
+		case tea.BatchMsg:
+			commands := make([]tea.Cmd, 0, len(result))
+			for _, cmd := range result {
+				commands = append(commands, screenCommand(msg.index, msg.generation, cmd))
+			}
+			return m, tea.Batch(commands...)
+		case tea.RawMsg:
+			if msg.index != m.active || msg.generation != m.generation {
+				return m, nil
+			}
+			return m, func() tea.Msg { return result }
+		case nil:
+			return m, nil
+		default:
+			return m, m.updateScreen(msg.index, result)
 		}
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
 	}
-
-	return m, m.screen.Update(msg, m.layoutContext())
+	if len(m.screens) == 0 {
+		return m, nil
+	}
+	return m, m.updateScreen(m.active, msg)
 }
 
 func (m model) View() tea.View {
+	if len(m.screens) == 0 {
+		return tea.NewView("")
+	}
+	active := m.screens[m.active]
 	ctx := m.layoutContext()
 	switch ctx.Layout {
 	case screen.LayoutCompactWide:
-		return m.screen.RenderCompactWide(ctx)
+		return active.RenderCompactWide(ctx)
 	case screen.LayoutWide:
-		return m.screen.RenderWide(ctx)
+		return active.RenderWide(ctx)
 	case screen.LayoutVeryWide:
-		return m.screen.RenderVeryWide(ctx)
+		return active.RenderVeryWide(ctx)
 	default:
-		return m.screen.RenderTall(ctx)
+		return active.RenderTall(ctx)
 	}
 }

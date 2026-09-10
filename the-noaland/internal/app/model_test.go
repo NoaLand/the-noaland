@@ -44,8 +44,8 @@ func (s *recordingScreen) RenderVeryWide(ctx screen.LayoutContext) tea.View {
 
 func TestModelDispatchesLayoutAfterResize(t *testing.T) {
 	recorded := &recordingScreen{}
-	m := model{screen: recorded}
-	if got := m.Init()(); got != "init" {
+	m := model{screens: []screen.Screen{recorded}}
+	if got := m.Init()().(screenMsg).message; got != "init" {
 		t.Fatalf("Init command = %v", got)
 	}
 	for _, tt := range []struct {
@@ -66,7 +66,7 @@ func TestModelDispatchesLayoutAfterResize(t *testing.T) {
 		if recorded.context != wantContext || recorded.message != msg {
 			t.Fatalf("resize forwarded with stale context: %+v", recorded.context)
 		}
-		if cmd == nil || cmd() != "update" {
+		if cmd == nil || cmd().(screenMsg).message != "update" {
 			t.Fatal("screen command was not forwarded")
 		}
 		view := m.View()
@@ -81,7 +81,7 @@ func TestModelDispatchesLayoutAfterResize(t *testing.T) {
 
 func TestModelHandlesQuitAndForwardsOtherMessages(t *testing.T) {
 	recorded := &recordingScreen{}
-	m := model{screen: recorded}
+	m := model{screens: []screen.Screen{recorded}}
 	_, cmd := m.Update(tea.KeyPressMsg{Code: 'q'})
 	if cmd == nil {
 		t.Fatal("quit command missing")
@@ -91,7 +91,72 @@ func TestModelHandlesQuitAndForwardsOtherMessages(t *testing.T) {
 	}
 	msg := tea.KeyPressMsg{Code: 'r'}
 	_, cmd = m.Update(msg)
-	if recorded.message != msg || cmd == nil || cmd() != "update" {
+	if recorded.message != msg || cmd == nil || cmd().(screenMsg).message != "update" {
 		t.Fatal("refresh key was not forwarded")
+	}
+}
+
+func TestScreenCyclingAndEmptyList(t *testing.T) {
+	first, second := &recordingScreen{}, &recordingScreen{}
+	m := model{screens: []screen.Screen{first, second}, width: 150, height: 24}
+	for _, tt := range []struct {
+		key   rune
+		index int
+	}{{tea.KeyRight, 1}, {tea.KeyRight, 0}, {tea.KeyLeft, 1}, {tea.KeyLeft, 0}} {
+		next, cmd := m.Update(tea.KeyPressMsg{Code: tt.key})
+		m = next.(model)
+		if m.active != tt.index || cmd == nil {
+			t.Fatalf("switch failed: %d", m.active)
+		}
+		selected := m.screens[m.active].(*recordingScreen)
+		if _, ok := selected.message.(screen.ActivatedMsg); !ok {
+			t.Fatal("activation not delivered")
+		}
+		if selected.context.Width != 150 {
+			t.Fatal("activation has stale size")
+		}
+	}
+	single := model{screens: []screen.Screen{first}}
+	if _, cmd := single.Update(tea.KeyPressMsg{Code: tea.KeyRight}); cmd != nil {
+		t.Fatal("single page should not switch")
+	}
+	empty := model{}
+	if empty.Init() != nil {
+		t.Fatal("empty init")
+	}
+	empty.View()
+	if _, cmd := empty.Update(tea.KeyPressMsg{Code: tea.KeyLeft}); cmd != nil {
+		t.Fatal("empty switch")
+	}
+}
+
+func TestAsyncResultsStayWithOwningScreen(t *testing.T) {
+	first, second := &recordingScreen{}, &recordingScreen{}
+	m := model{screens: []screen.Screen{first, second}, active: 1, generation: 2, width: 90, height: 24}
+	_, cmd := m.Update(screenMsg{index: 0, generation: 0, message: "loaded"})
+	if first.message != "loaded" || second.message != nil || cmd == nil {
+		t.Fatal("result routed to wrong page")
+	}
+	raw := tea.Raw("old image")()
+	for _, msg := range []screenMsg{{0, 2, raw}, {1, 1, raw}} {
+		if _, cmd := m.Update(msg); cmd != nil {
+			t.Fatal("stale/hidden graphics escaped")
+		}
+	}
+	if _, cmd := m.Update(screenMsg{1, 2, raw}); cmd == nil {
+		t.Fatal("active graphics suppressed")
+	}
+}
+
+func TestBatchCommandsKeepOwnership(t *testing.T) {
+	m := model{screens: []screen.Screen{&recordingScreen{}, &recordingScreen{}}, active: 1}
+	batch := tea.BatchMsg{func() tea.Msg { return "one" }, func() tea.Msg { return "two" }}
+	_, cmd := m.Update(screenMsg{0, 0, batch})
+	commands := cmd().(tea.BatchMsg)
+	for _, command := range commands {
+		msg := command().(screenMsg)
+		if msg.index != 0 {
+			t.Fatal("batch lost originating screen")
+		}
 	}
 }

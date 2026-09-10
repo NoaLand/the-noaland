@@ -19,3 +19,6 @@ type Screen interface {
 	RenderWide(LayoutContext) tea.View
 	RenderVeryWide(LayoutContext) tea.View
 }
+
+// ActivatedMsg asks a screen to redraw out-of-band content after page switching.
+type ActivatedMsg struct{}
