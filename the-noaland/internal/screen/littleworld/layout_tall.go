@@ -16,5 +16,5 @@ func (m Screen) renderTall() string {
 		Width(m.context.Width).
 		Height(m.context.Height).
 		Align(lipgloss.Center, lipgloss.Center).
-		Render("Tall layout coming soon...")
+		Render("World Simulator: Tall layout coming soon...")
 }

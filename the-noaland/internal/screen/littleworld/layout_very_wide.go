@@ -16,5 +16,5 @@ func (m Screen) renderVeryWide() string {
 		Width(m.context.Width).
 		Height(m.context.Height).
 		Align(lipgloss.Center, lipgloss.Center).
-		Render("Very wide layout coming soon...")
+		Render("World Simulator: Very wide layout coming soon...")
 }

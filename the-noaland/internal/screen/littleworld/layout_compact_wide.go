@@ -16,5 +16,5 @@ func (m Screen) renderCompactWide() string {
 		Width(m.context.Width).
 		Height(m.context.Height).
 		Align(lipgloss.Center, lipgloss.Center).
-		Render("Compact layout coming soon...")
+		Render("World Simulator: Compact layout coming soon...")
 }
