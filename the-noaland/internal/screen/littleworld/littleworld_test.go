@@ -31,14 +31,14 @@ func TestLayoutsShareWorldWithoutAdvancingIt(t *testing.T) {
 		s.RenderTall, s.RenderCompactWide, s.RenderWide, s.RenderVeryWide,
 	} {
 		render(ctx)
-		if s.world != w || s.ticks != 3 || tree.Express().Appearance != before {
+		if s.world != w || s.world.Time() != 3 || tree.Express().Appearance != before {
 			t.Fatal("rendering changed the shared world")
 		}
 	}
 	for _, msg := range []tea.Msg{
 		screen.DeactivatedMsg{}, screen.ActivatedMsg{}, tea.WindowSizeMsg{Width: 150, Height: 24},
 	} {
-		if s.Update(msg, ctx) != nil || s.world != w || s.ticks != 3 {
+		if s.Update(msg, ctx) != nil || s.world != w || s.world.Time() != 3 {
 			t.Fatal("page or layout changes restarted the world or timer")
 		}
 	}
@@ -47,12 +47,12 @@ func TestLayoutsShareWorldWithoutAdvancingIt(t *testing.T) {
 func TestWorldContinuesWhileHidden(t *testing.T) {
 	s := New()
 	ctx := screen.LayoutContext{}
-	if s.Update(tickMsg{}, ctx) != nil || s.ticks != 0 {
+	if s.Update(tickMsg{}, ctx) != nil || s.world.Time() != 0 {
 		t.Fatal("an uninitialized screen must not advance")
 	}
 	s.Init()
 	s.Update(screen.DeactivatedMsg{}, ctx)
-	if s.Update(tickMsg{}, ctx) == nil || s.ticks != 1 {
+	if s.Update(tickMsg{}, ctx) == nil || s.world.Time() != 1 {
 		t.Fatal("hidden world must keep advancing")
 	}
 }
