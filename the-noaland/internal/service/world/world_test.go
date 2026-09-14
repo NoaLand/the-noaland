@@ -39,9 +39,9 @@ func TestWorldEvolves(t *testing.T) {
 	for _, record := range world.historiographer.annal.records {
 		t.Logf(
 			"Time #%d - %s: %s\n",
-			record.time,
-			record.entityId,
-			record.message,
+			record.Time,
+			record.EntityID,
+			record.Message,
 		)
 	}
 }
@@ -105,9 +105,9 @@ func TestWorldDeterministic(t *testing.T) {
 	for _, record := range worldA.historiographer.annal.records {
 		t.Logf(
 			"Time #%d - %s: %s\n",
-			record.time,
-			record.entityId,
-			record.message,
+			record.Time,
+			record.EntityID,
+			record.Message,
 		)
 	}
 	t.Logf("\n\n")
@@ -115,9 +115,9 @@ func TestWorldDeterministic(t *testing.T) {
 	for _, record := range worldB.historiographer.annal.records {
 		t.Logf(
 			"Time #%d - %s: %s\n",
-			record.time,
-			record.entityId,
-			record.message,
+			record.Time,
+			record.EntityID,
+			record.Message,
 		)
 	}
 }

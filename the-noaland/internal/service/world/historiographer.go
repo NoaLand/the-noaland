@@ -2,20 +2,27 @@ package world
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/NoaLand/the-noaland/the-noaland/internal/service/world/entity"
 	"github.com/NoaLand/the-noaland/the-noaland/internal/service/world/entity/worldtree"
 )
 
-type record struct {
-	time       uint64
-	entityId   entity.EntityID
-	entityName entity.EntityName
-	message    string
+// Record describes an observed change at a world time step.
+type Record struct {
+	Time       uint64
+	EntityID   entity.EntityID
+	EntityName entity.EntityName
+	Message    string
 }
 
 type Annal struct {
-	records []record
+	records []Record
+}
+
+// Records returns a chronological snapshot. Changes to it do not affect the annal.
+func (a *Annal) Records() []Record {
+	return slices.Clone(a.records)
 }
 
 type historiographer struct {
@@ -51,11 +58,11 @@ func (h *historiographer) recordWorldTree(time uint64, tree *worldtree.WorldTree
 	}
 
 	if previousExpression.Appearance != current.Appearance {
-		record := record{
-			time:       time,
-			entityId:   tree.ID(),
-			entityName: tree.Name(),
-			message:    worldTreeMessage(previousExpression, current),
+		record := Record{
+			Time:       time,
+			EntityID:   tree.ID(),
+			EntityName: tree.Name(),
+			Message:    worldTreeMessage(previousExpression, current),
 		}
 
 		h.annal.records = append(h.annal.records, record)
