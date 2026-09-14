@@ -14,13 +14,13 @@ type record struct {
 	message    string
 }
 
-type annal struct {
+type Annal struct {
 	records []record
 }
 
 type historiographer struct {
 	last  map[entity.EntityID]any
-	annal annal
+	annal Annal
 }
 
 func NewHistoriographer() *historiographer {

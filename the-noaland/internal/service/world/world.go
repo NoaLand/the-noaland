@@ -54,3 +54,7 @@ func (world *World) Generate() {
 		world.Add(tree)
 	}
 }
+
+func (world *World) Annal() *Annal {
+	return &world.historiographer.annal
+}
