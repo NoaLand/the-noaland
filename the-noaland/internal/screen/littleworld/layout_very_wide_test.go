@@ -41,7 +41,7 @@ func TestVeryWideShowsAnnalWithoutChangingWorld(t *testing.T) {
 	if !strings.Contains(content, "#100") || !strings.Contains(content, "42") {
 		t.Fatal("world time and seed must be visible")
 	}
-	if !view.AltScreen || !slices.Equal(records, w.Annal().Records()) || s.ticks != 100 {
+	if !view.AltScreen || !slices.Equal(records, w.Annal().Records()) || s.world.Time() != 100 {
 		t.Fatal("rendering changed the world or disabled the alternate screen")
 	}
 }
@@ -57,7 +57,7 @@ func TestVeryWideKeepsLatestRecordsWithinViewport(t *testing.T) {
 	for range 100 {
 		w.Step()
 	}
-	s := &Screen{world: w, ticks: 100}
+	s := &Screen{world: w}
 	records := w.Annal().Records()
 	for _, size := range [][2]int{{150, 24}, {224, 57}, {300, 80}, {1, 1}, {0, 0}} {
 		t.Run(fmt.Sprint(size), func(t *testing.T) {
