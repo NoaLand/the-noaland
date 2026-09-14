@@ -8,9 +8,10 @@ import (
 )
 
 type record struct {
-	time     uint64
-	entityId entity.EntityID
-	message  string
+	time       uint64
+	entityId   entity.EntityID
+	entityName entity.EntityName
+	message    string
 }
 
 type annal struct {
@@ -53,6 +54,7 @@ func (h *historiographer) recordWorldTree(time uint64, tree *worldtree.WorldTree
 		record := record{
 			time:     time,
 			entityId: tree.ID(),
+			entityName: tree.Name(),
 			message:  worldTreeMessage(previousExpression, current),
 		}
 

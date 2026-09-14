@@ -8,7 +8,7 @@ import (
 
 func TestWorldEvolves(t *testing.T) {
 	world := New(42)
-	worldTree := worldtree.New("world-tree", world.Seed())
+	worldTree := worldtree.New("world-tree", "Silver-Oak", world.Seed())
 
 	world.Add(worldTree)
 

@@ -5,8 +5,8 @@ import (
 )
 
 func TestWorldTreeDeterministic(t *testing.T) {
-	a := New("world-tree", 42)
-	b := New("world-tree", 42)
+	a := New("world-tree", "Silver-Oak", 42)
+	b := New("world-tree", "Silent-Thorn", 42)
 
 	for step := range 100 {
 		a.Step()
@@ -36,8 +36,8 @@ func TestWorldTreeDeterministic(t *testing.T) {
 }
 
 func TestWorldTreesWithDifferentIDsEvolveDifferently(t *testing.T) {
-	a := New("world-tree-A", 42)
-	b := New("world-tree-B", 42)
+	a := New("world-tree-A", "Silver-Oak", 42)
+	b := New("world-tree-B", "Silent-Thorn", 42)
 	diverged := false
 
 	for range 100 {

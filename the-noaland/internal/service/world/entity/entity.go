@@ -6,10 +6,12 @@ import (
 )
 
 type EntityID string
+type EntityName string
 
 type Entity interface {
 	ID() EntityID
 	Step()
+	Name() EntityName
 }
 
 func DeriveSeed(worldSeed uint64, id EntityID) uint64 {
