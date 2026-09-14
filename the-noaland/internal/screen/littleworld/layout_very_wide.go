@@ -29,7 +29,7 @@ func (m Screen) renderVeryWide() string {
 	bodyHeight := m.context.Height - 6
 	if width < 70 || bodyHeight < 8 {
 		return lipgloss.NewStyle().MaxWidth(m.context.Width).MaxHeight(m.context.Height).
-			Render(fmt.Sprintf("Little World · Time #%d", m.ticks))
+			Render(fmt.Sprintf("Little World · Time #%d", m.world.Time()))
 	}
 
 	const sidebarWidth = 26
@@ -72,7 +72,7 @@ func (m Screen) renderVeryWide() string {
 			value.Render(fmt.Sprint(m.world.Seed())),
 			"",
 			label.Render("Time"),
-			value.Render(fmt.Sprintf("#%d", m.ticks)),
+			value.Render(fmt.Sprintf("#%d", m.world.Time())),
 			"",
 			muted.Render("1 step / second"),
 		}, "\n"))

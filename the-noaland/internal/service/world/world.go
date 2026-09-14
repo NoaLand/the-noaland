@@ -55,6 +55,10 @@ func (world *World) Generate() {
 	}
 }
 
+func (world *World) Time() uint64 {
+	return world.timer
+}
+
 func (world *World) Annal() *Annal {
 	return &world.historiographer.annal
 }

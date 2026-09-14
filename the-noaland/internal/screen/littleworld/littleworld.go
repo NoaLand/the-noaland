@@ -15,7 +15,6 @@ type tickMsg struct{}
 type Screen struct {
 	context screen.LayoutContext
 	world   *world.World
-	ticks   uint64
 	started bool
 }
 
@@ -37,7 +36,6 @@ func (m *Screen) Update(msg tea.Msg, ctx screen.LayoutContext) tea.Cmd {
 	m.context = ctx
 	if _, ok := msg.(tickMsg); ok && m.started {
 		m.world.Step()
-		m.ticks++
 		return nextTick()
 	}
 	return nil
