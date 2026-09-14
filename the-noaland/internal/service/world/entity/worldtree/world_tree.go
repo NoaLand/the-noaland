@@ -1,6 +1,10 @@
 package worldtree
 
-import "github.com/NoaLand/the-noaland/the-noaland/internal/service/world/entity"
+import (
+	"math/rand/v2"
+
+	"github.com/NoaLand/the-noaland/the-noaland/internal/service/world/entity"
+)
 
 type worldTreeState struct {
 	growth int
@@ -9,14 +13,18 @@ type worldTreeState struct {
 type WorldTree struct {
 	id    entity.EntityID
 	state worldTreeState
+	rng   *rand.Rand
 }
 
-func New(id entity.EntityID) *WorldTree {
+func New(id entity.EntityID, worldSeed uint64) *WorldTree {
+	seed := entity.DeriveSeed(worldSeed, id)
+
 	return &WorldTree{
 		id: id,
 		state: worldTreeState{
 			growth: 0,
 		},
+		rng: rand.New(rand.NewPCG(seed, 0)),
 	}
 }
 
@@ -25,7 +33,9 @@ func (t *WorldTree) ID() entity.EntityID {
 }
 
 func (t *WorldTree) Step() {
-	t.state.growth++
+	if t.rng.Float64() < 0.7 {
+		t.state.growth++
+	}
 }
 
 type Expressions struct {
