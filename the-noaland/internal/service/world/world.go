@@ -1,7 +1,11 @@
 package world
 
 import (
+	"fmt"
+	"math/rand/v2"
+
 	"github.com/NoaLand/the-noaland/the-noaland/internal/service/world/entity"
+	"github.com/NoaLand/the-noaland/the-noaland/internal/service/world/entity/worldtree"
 )
 
 type World struct {
@@ -35,4 +39,17 @@ func (world *World) Step() {
 
 func (world *World) Seed() uint64 {
 	return world.seed
+}
+
+func (world *World) Generate() {
+	rng := rand.New(rand.NewPCG(world.seed, 0))
+
+	count := 1 + rng.IntN(5)
+
+	for i := range count {
+		id := entity.EntityID(fmt.Sprintf("world-tree-%d", i))
+
+		tree := worldtree.New(id, world.seed)
+		world.Add(tree)
+	}
 }

@@ -44,12 +44,18 @@ func TestWorldEvolves(t *testing.T) {
 
 func TestWorldDeterministic(t *testing.T) {
 	worldA := New(42)
-	worldTreeA := worldtree.New("world-tree", worldA.Seed())
-	worldA.Add(worldTreeA)
+	worldA.Generate()
 
 	worldB := New(42)
-	worldTreeB := worldtree.New("world-tree", worldB.Seed())
-	worldB.Add(worldTreeB)
+	worldB.Generate()
+
+	if len(worldA.entities) != len(worldB.entities) {
+		t.Fatalf(
+			"expected same number of entities when generates the world with the same seed, but got %d and %d",
+			len(worldA.entities),
+			len(worldB.entities),
+		)
+	}
 
 	for range 100 {
 		worldA.Step()
