@@ -52,10 +52,10 @@ func (h *historiographer) recordWorldTree(time uint64, tree *worldtree.WorldTree
 
 	if previousExpression.Appearance != current.Appearance {
 		record := record{
-			time:     time,
-			entityId: tree.ID(),
+			time:       time,
+			entityId:   tree.ID(),
 			entityName: tree.Name(),
-			message:  worldTreeMessage(previousExpression, current),
+			message:    worldTreeMessage(previousExpression, current),
 		}
 
 		h.annal.records = append(h.annal.records, record)
