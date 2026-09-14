@@ -15,7 +15,7 @@ func New(seed uint64) *World {
 	return &World{
 		seed:            seed,
 		historiographer: NewHistoriographer(),
-		timer: 0,
+		timer:           0,
 	}
 }
 
