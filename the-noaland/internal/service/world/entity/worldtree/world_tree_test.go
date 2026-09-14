@@ -12,6 +12,15 @@ func TestWorldTreeDeterministic(t *testing.T) {
 		a.Step()
 		b.Step()
 
+		if a.state != b.state {
+			t.Fatalf(
+				"step %d: expected same state, got %+v and %+v",
+				step,
+				a.state,
+				b.state,
+			)
+		}
+
 		aExpr := a.Express()
 		bExpr := b.Express()
 
@@ -23,5 +32,23 @@ func TestWorldTreeDeterministic(t *testing.T) {
 				bExpr.Appearance,
 			)
 		}
+	}
+}
+
+func TestWorldTreeDifferentSeedsEvolveDifferently(t *testing.T) {
+	a := New("world-tree-A", 42)
+	b := New("world-tree-B", 42)
+
+	for range 100 {
+		a.Step()
+		b.Step()
+	}
+
+	if a.state == b.state {
+		t.Fatalf(
+			"Expected different state, got %+v and %+v",
+			a.state.growth,
+			b.state.growth,
+		)
 	}
 }
