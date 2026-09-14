@@ -57,6 +57,19 @@ func TestWorldDeterministic(t *testing.T) {
 		)
 	}
 
+	for i := range worldA.entities {
+		a := worldA.entities[i]
+		b := worldB.entities[i]
+
+		if a.ID() != b.ID() || a.Name() != b.Name() {
+			t.Fatalf(
+				"expected same entity when generates the world with the same seed, got %s and %s",
+				a.Name(),
+				b.Name(),
+			)
+		}
+	}
+
 	for range 100 {
 		worldA.Step()
 		worldB.Step()
