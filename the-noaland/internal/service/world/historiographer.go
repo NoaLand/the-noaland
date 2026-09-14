@@ -59,13 +59,6 @@ func (h *historiographer) recordWorldTree(time uint64, tree *worldtree.WorldTree
 		}
 
 		h.annal.records = append(h.annal.records, record)
-
-		fmt.Printf(
-			"Time #%d - %s: %s\n",
-			record.time,
-			record.entityName,
-			record.message,
-		)
 	}
 
 	h.last[tree.ID()] = current
