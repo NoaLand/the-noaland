@@ -31,4 +31,13 @@ func TestWorldEvolves(t *testing.T) {
 			appearance,
 		)
 	}
+
+	for _, record := range world.historiographer.annal.records {
+		t.Logf(
+			"Time #%d - %s: %s\n",
+			record.time,
+			record.entityId,
+			record.message,
+		)
+	}
 }
