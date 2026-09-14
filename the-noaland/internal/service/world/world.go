@@ -13,7 +13,7 @@ type World struct {
 	seed            uint64
 	historiographer *historiographer
 	timer           uint64
-	generationRng             *rand.Rand
+	generationRng   *rand.Rand
 }
 
 func New(seed uint64) *World {
@@ -21,7 +21,7 @@ func New(seed uint64) *World {
 		seed:            seed,
 		historiographer: NewHistoriographer(),
 		timer:           0,
-		generationRng:             rand.New(rand.NewPCG(seed, 0)),
+		generationRng:   rand.New(rand.NewPCG(seed, 0)),
 	}
 }
 

@@ -5,8 +5,10 @@ import (
 	"hash/fnv"
 )
 
-type EntityID string
-type EntityName string
+type (
+	EntityID   string
+	EntityName string
+)
 
 type Entity interface {
 	ID() EntityID

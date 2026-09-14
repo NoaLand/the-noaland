@@ -24,7 +24,7 @@ var worldtreeNames = []string{
 }
 
 func generateWorldTreeName(rng *rand.Rand) entity.EntityName {
-	return (entity.EntityName)(fmt.Sprintf(
+	return entity.EntityName(fmt.Sprintf(
 		"%s-%s",
 		worldtreePrefixes[rng.IntN(len(worldtreePrefixes))],
 		worldtreeNames[rng.IntN(len(worldtreeNames))],
