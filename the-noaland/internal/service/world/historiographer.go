@@ -8,17 +8,17 @@ import (
 )
 
 type record struct {
-	time uint64
+	time     uint64
 	entityId entity.EntityID
-	message string
+	message  string
 }
 
 type annal struct {
 	records []record
 }
 
-type historiographer struct{
-	last map[entity.EntityID]any
+type historiographer struct {
+	last  map[entity.EntityID]any
 	annal annal
 }
 
