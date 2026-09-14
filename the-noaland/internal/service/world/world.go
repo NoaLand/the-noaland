@@ -13,7 +13,7 @@ type World struct {
 	seed            uint64
 	historiographer *historiographer
 	timer           uint64
-	rng             *rand.Rand
+	generationRng             *rand.Rand
 }
 
 func New(seed uint64) *World {
@@ -21,7 +21,7 @@ func New(seed uint64) *World {
 		seed:            seed,
 		historiographer: NewHistoriographer(),
 		timer:           0,
-		rng:             rand.New(rand.NewPCG(seed, 0)),
+		generationRng:             rand.New(rand.NewPCG(seed, 0)),
 	}
 }
 
@@ -44,14 +44,13 @@ func (world *World) Seed() uint64 {
 }
 
 func (world *World) Generate() {
-	rng := rand.New(rand.NewPCG(world.seed, 0))
-
-	count := 1 + rng.IntN(5)
+	count := 1 + world.generationRng.IntN(5)
 
 	for i := range count {
 		id := entity.EntityID(fmt.Sprintf("world-tree-%d", i))
+		name := generateWorldTreeName(world.generationRng)
 
-		tree := worldtree.New(id, generateWorldTreeName(world.rng), world.seed)
+		tree := worldtree.New(id, name, world.seed)
 		world.Add(tree)
 	}
 }

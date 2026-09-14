@@ -63,7 +63,7 @@ func (h *historiographer) recordWorldTree(time uint64, tree *worldtree.WorldTree
 		fmt.Printf(
 			"Time #%d - %s: %s\n",
 			record.time,
-			record.entityId,
+			record.entityName,
 			record.message,
 		)
 	}
@@ -73,7 +73,8 @@ func (h *historiographer) recordWorldTree(time uint64, tree *worldtree.WorldTree
 
 func worldTreeMessage(previous, current *worldtree.Expressions) string {
 	return fmt.Sprintf(
-		"The World Tree changed from %s to %s.",
+		"%s changed from %s to %s.",
+		current.Name,
 		previous.Appearance,
 		current.Appearance,
 	)
